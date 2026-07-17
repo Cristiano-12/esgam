@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de notas</title>
+    <meta name="description" content="Portal Escolar. Todos os direitos reservados">
+    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="portal.css">
+</head>
+<body>
+
+    <header class="main-header">
+    <div class="header-logo-container">
+        <img src="imagens/logo.png" alt="Logo ESGAM"  class="school-logo">
+    </div>
+
+    <div class="header-text">
+        <h1>ESGAM</h1>
+        <p>Portal académico do estudante</p>
+    </div>
+
+    <div class="header-menu">
+        <button type="button" id="menuBtn" aria-label="Menu">⋮</button>
+        <div id="dropdownMenu" class="dropdown-menu">
+            <button type="button" id="logoutBtn">Sair</button>
+        </div>
+    </div>
+    </header>
+
+    <main class="dashboard">
+        <div class="top-grid">
+            <section class="card">
+                <h2>Dados do aluno</h2>
+                <div class="student-vertical-info">
+                    <p><strong>Nome:</strong> {{ aluno.nome }}</p>
+                    <p><strong>Classe:</strong> {{ aluno.classe}}</p>
+                    <p><strong>turma:</strong> {{ aluno.turma }}</p>
+                    <p><strong>Grupo:</strong> {{ aluno.grupo }}</p>
+                    <p><strong>ID:</strong> {{ aluno.id}}</p>
+                </div>
+            </section>
+
+            <section class="card final-average-box">
+                <h2>Média final</h2>
+                <div class="final-score">
+                   {{ aluno.media_geral }}
+                </div>
+
+                {% if aluno.situacao %}
+                <p class="status-aluno">
+                    {{ aluno.situacao }}
+                </p>
+                {% endif %}
+            </section> 
+
+        </div>
+
+        <section class="card grades-card">
+            <h2>Pauta de avaliações trimestrais</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th rowspan="2">Disciplina</th>
+
+                            <th colspan="5" class="trimestre-sep">
+                                1º Trimestre
+                            </th>
+                            <th colspan="5" class="trimestre-sep">
+                                2º Trimestre
+                            </th>
+                            <th colspan="5" class="trimestre-sep">
+                                3º Trimestre
+                            </th>
+
+                        {% if aluno.classe == "12" %}    
+                            <th rowspan="2" class="trimestre-sep mfg-col">Exame</th>
+                            <th rowspan="2" class="mfg-col">Nota Global</th>
+                        {% else %}
+                            <th rowspan="2" class="trimestre-sep mfg-col">MFG</th>    
+                        </tr>
+                        <tr>
+                            <th class="trimestre-sep">1P</th>
+                            <th>2P</th>
+                            <th>3P</th>
+                            <th>4P</th>
+                            <th class="media-col">MF1</th>
+
+                            <th class="trimestre-sep">1P</th>
+                            <th>2P</th>
+                            <th>3P</th>
+                            <th>4P</th>
+                            <th class="media-col">MF2</th>
+
+                            <th class="trimestre-sep">1P</th>
+                            <th>2P</th>
+                            <th>3P</th>
+                            <th>4P</th>
+                            <th class="media-col">MF3</th>
+                        </tr>
+                    </thead>
+                    
+                    <tbody id="gradesTable">
+                        {% if pauta_disciplinas %}
+                            {% for linha in pauta_disciplinas %}
+                            <tr>
+                                <td class="subject-name">{{ linha.nome }}</td>
+
+                                <!-- 1º Trimestre -->
+                                <td class="trimestre-sep">{{ linha.t1_p1 }}</td>
+                                <td>{{ linha.t1_p2 }}</td>
+                                <td>{{ linha.t1_p3 }}</td>
+                                <td>{{ linha.t1_p4 }}</td>
+                                <td class="media-col {% if linha.mf1 < 10 %}nota-reprovado{% else %}nota-aprovado{% endif %}">
+                                    <strong>{{ linha.mf1 }}</strong>
+                                </td>
+
+                                <!-- 2º Trimestre -->
+                                <td class="trimestre-sep">{{ linha.t2_p1 }}</td>
+                                <td>{{ linha.t2_p2 }}</td>
+                                <td>{{ linha.t2_p3 }}</td>
+                                <td>{{ linha.t2_p4 }}</td>
+
+                                <td class="media-col {% if linha.mf2 < 10 %}nota-reprovado{% else %}nota-aprovado{% endif %}">
+                                    <strong>{{ linha.mf2 }}</strong>
+                                </td>
+
+                                <!-- 3º Trimestre -->
+                                <td class="trimestre-sep">{{ linha.t3_p1 }}</td>
+                                <td>{{ linha.t3_p2 }}</td>
+                                <td>{{ linha.t3_p3 }}</td>
+                                <td>{{ linha.t3_p4 }}</td>
+                                <td class="media-col {% if linha.mf3 < 10 %}nota-reprovado{% else %}nota-aprovado{% endif %}">
+                                    <strong>{{ linha.mf3 }}</strong>
+                                </td>
+                                
+                                <td class="trimestre-sep mfg-col" style="text-align: center; color: #94a3b8; font-weight: bold;">
+                                    X
+                                </td>
+
+                                <td class="mfg-col {% if linha.nota_global < 10 %}nota-reprovado{% else %}nota-aprovado{% endif %}">
+                                    <strong>{{ linha.nota_global }}</strong>
+                                </td>
+
+                            </tr>
+                            {% endfor %}
+
+                        {% else %}
+
+                            <tr>
+                                <td colspan="17" style="text-align: center; padding: 20px;">
+                                    Nenhuma avaliação disponível.
+                                </td>
+                            </tr>
+
+                        {% endif %}
+
+                    </tbody>
+                </table>
+
+            </div>
+
+        </section>
+
+        <section class="card info-list">
+
+            <h2>Informações</h2>
+
+            <ul>
+
+                <li>
+                    Este documento reflete as avaliações oficiais registadas no sistema interno da escola.
+                </li>
+
+                {% if aviso_painel %}
+                <li>
+                    <strong>Aviso da Direção:</strong>
+                    {{ aviso_painel }}
+                </li>
+                {% endif %}
+
+            </ul>
+
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <p>
+            &copy; Escola Secundária Geral de Alto Molócuè. Todos os direitos reservados.
+        </p>
+    </footer>
+
+    <script src="menu.js"></script>
+
+</body>
+</html>

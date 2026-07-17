@@ -1,0 +1,377 @@
+
+/* ===================================
+   RESET GLOBAL (Trava a página no mobile)
+=================================== */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    max-width: 100%;
+    margin: 0; 
+    padding: 0;
+    overflow-x: hidden;
+    background-color: #f8fafc;
+}
+
+/* ===================================
+   PAUTA DE NOTAS
+=================================== */
+.main-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 35px 20px;
+    background: transparent;
+    position: relative;
+    width: 100%;
+}
+
+.header-logo-container {
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.header-left .school-logo {
+    height: 55px;
+    width: auto;
+    object-fit: contain;
+}
+
+.header-text {
+    text-align: center;
+}
+
+.header-text h1 {
+    font-size: 1.8rem;
+    color: #1e293b;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+
+.header-text p {
+    color: #64748b;
+    font-size: 0.95rem;
+    margin-top: 2px;
+}
+
+/* ===================================
+   MENU
+=================================== */
+.header-menu {
+    position: absolute;
+    top: 25px;
+    right: 25px;
+    z-index: 50;
+}
+
+#menuBtn {
+    background: none;
+    border: none;
+    outline: none;
+    font-size: 24px;
+    color: #475569;
+    cursor: pointer;
+    padding: 4px 8px;
+    background-color: transparent;
+    transition: color 0.2s ease;
+}
+
+#menuBtn:hover {
+    background-color: transparent;
+    color: #1e293b;
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 110%;
+    background-color: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 10%);
+    min-width: 160px;
+    z-index: 100;
+    overflow: hidden;
+    animation: fadeInDropdown 0.2s ease-out;
+}
+
+.dropdown-menu.show {
+    display: block;
+}
+
+#logoutBtn {
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 0.9rem;
+    color: #ef4444;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#logoutBtn:hover {
+    background-color: #fef2f2;
+}
+
+/* ===================================
+   CARD DAS NOTAS
+=================================== */
+.dashboard {
+    width: 100%;
+    max-width: 1400px;
+    margin:0 auto;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.top-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 25px;
+    width: 100%;
+    align-items: stretch;
+}
+
+.card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 24px;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 30%);
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+}
+
+.card h2 {
+    font-size: 0.9rem;
+    margin-bottom: 18px;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 8px;
+}
+
+/* ===================================
+   DADOS DO ESTUDANTE
+=================================== */
+.student-vertical-info {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.student-vertical-info p {
+    font-size: 0.95rem;
+    color: #475569;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+.student-vertical-info strong {
+    color: #0f172a;
+    min-width: 65px;
+    display: inline-block;
+}
+
+.student-vertical-info span {
+    color: #1e293b;
+    font-weight: 600;
+}
+
+/* ===================================
+   BLOCO DE DESTAQUE DE MEDIA FINAL
+=================================== */
+.final-average-box {
+    border-left: 6px solid #4c1d95;
+    display:flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+}
+
+.final-score {
+    font-size: 3.2rem;
+    font-weight: 900;
+    color: #1e293b;
+    margin-top: 5px;
+}
+
+/* ===================================
+   PAUTA "TABELA DE NOTAS"
+=================================== */
+.grades-card {
+    width: 100%;
+    margin-bottom: 25px;
+}
+
+.table-container {
+    width: 100%;
+    max-width: 100%; 
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    margin-top: 10px;
+    box-sizing: border-box;
+}
+
+table {
+    min-width: 900px; 
+    width: max-content;
+    border-collapse: collapse;
+    
+}
+
+th {
+    background: #f1f5f9;
+    color: #1e293b;
+    font-size: 0.75rem;
+    padding: 12px 6px;
+    border: 1px solid #cbd5e1;
+    text-transform: uppercase;
+    font-weight: 700;
+    background-color: #fff;
+}
+
+.trimestre-sep {
+    border-left: 2px solid #475569 !important; 
+}
+
+td {
+    padding: 12px 6px;
+    border: 1px solid #e2e8f0;
+    font-size: 0.9rem;
+    text-align: center;
+    color: #334155;
+}
+
+.subject-name {
+    text-align: left;
+    padding-left: 16px !important;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #1e293b;
+    background-color: #f8fafc !important;
+    border-right: 2px solid #cbd5e1 !important;
+    position: static !important;
+}
+
+.media-col {
+    background: #f8fafc;
+    font-weight: 700;
+    color: #4c1d95;
+}
+
+.mfg-col {
+    background-color: #f1f5f9;
+    font-weight: 800;
+    color: #1e1b4b;
+}
+
+tr:focus-within, tr:hover {
+    background-color: #f8fafc;
+    outline: none;
+}
+
+tr:focus-within td, tr:hover td {
+    color: #000;
+    background-color: #f1f5f9;
+}
+
+.info-list ul {
+    padding-left: 20px;
+}
+
+.info-list li {
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+    color: #713f12;
+    line-height: 1.5;
+}
+
+.info-list {
+    background-color: #fffbed;
+    border: 1px solid #fde047;
+    border-left: 6px solid #eab308;
+    border-radius: 8px;
+    padding: 24px;
+    width: 100%;
+    margin-top: 25px;
+}
+
+.info-list li:last-child {
+    margin-bottom: 0;
+}
+
+/* ===================================
+  ANIMACOES E RESPONSIVIDADE
+=================================== */
+@keyframes fadeInDropdown {
+    from { opacity: 0; transform: translateY(-5px);}
+    to { opacity: 1; transform: translateY(0);}
+    }
+
+@media (width <= 768px) {
+    .main-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+        padding: 20px;
+    }
+
+    .header-text {
+        order: 2;
+    }
+
+    .header-menu {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+    }
+
+    .top-grid {
+        display: grid;
+        grid-template-columns:1fr;
+        gap: 25px;
+        width: 100%;
+        max-width: 100%;
+        margin-bottom: 25px;
+        box-sizing: border-box;
+    }
+}
+
+/* ===================================
+   ESTADO DE APROVACAO
+=================================== */
+.nota-aprovado {
+    color: #16a34a !important;
+}
+
+.nota-reprovado {
+    color: #dc2626 !important;
+}   
+
+image{
+    max-width: 100%;
+}
+
+table{
+    max-width: none;
+}
+
+.card{
+    overflow: hidden;
+}

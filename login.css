@@ -1,0 +1,160 @@
+
+/* ===================================
+   HEADER
+=================================== */
+.main-header {
+    display: flex;
+    justify-content: center;
+    padding: 0;
+}
+ 
+
+/* ===================================
+   MAIN (CONTEUDO)
+=================================== */
+main{
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    padding: 0 24px 24px;
+}
+
+/* ===================================
+   LOGIN CARD
+=================================== */
+.login-section {
+    width: 100%;
+    max-width: 420px;
+    background: #fefefe;
+    border: none;
+    border-radius: 24px;
+    padding: 24px 40px 40px;
+    box-shadow:
+        0 0 8px rgb(255 255 255 / 30%),
+        0 8px 20px rgb(0 0 0 / 25%)
+}
+
+.login-section h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    margin-bottom: 10px;
+    text-align: center;
+    background: linear-gradient(to right, #fff, #cbd5e1);
+    background-clip: text;
+    -webkit-text-fill-color: initial;
+}
+
+.login-section p {
+    color: #000710;
+    text-align: center;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 36px;
+}
+
+/* ===================================
+   FORMULARIOS E IMPUTS
+=================================== */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.input-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.input-field label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #262627;
+}
+
+.input-field input {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #252424;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-field input:focus {
+    border-color: #818cf8;
+    box-shadow: 0 0 0 4px rgb(99 102 241 / 12%);
+}
+
+
+/* ===================================
+   OLHO
+=================================== */
+.password-wrapper {
+    position: relative;
+}
+
+.password-wrapper input {
+    width: 100%;
+    padding-right: 50px;
+}
+
+#togglePassword {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+
+/* ===================================
+   BOTAO ENVIAR
+=================================== */
+button[type="submit"] {
+    margin-top: 8px;
+    border: none;
+    border-radius: 14px;
+    padding: 16px;
+    background: #A855f7;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+button[type="submit"]:hover {
+    background: #4f46e5;
+    box-shadow: 0 4px 12px rgb(99 102 241 / 30%);
+}
+
+button[type="submit"]:active {
+    border-bottom: 3px solid #fbbf24;
+}
+
+/* ===================================
+   RESPONSIVIDADE(mobile first optimization)
+=================================== */
+@media (width <= 480px) {
+    body {
+        padding: 12px;
+    }
+
+    .login-section {
+        padding: 32px 24px;
+        border-radius: 20px;
+    }
+
+    .login-section h1 {
+        margin-left: -10px;
+        font-size: 1.75rem;
+        text-align: center;
+        
+    }
+}

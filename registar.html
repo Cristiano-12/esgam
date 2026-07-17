@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registar Aluno</title>
+    <link rel="stylesheet" href="controle.css">
+</head>
+<body>
+    <main class="dashboard">
+        
+        <section class="card" style="max-width: 500px; margin: 40px auto;">
+            <h2>Registar Novo Aluno</h2>
+            <p class="card-subtitle">
+                Insira os dados do estudante. O ID será gerado de forma automática pelo sistema.
+            </p>
+
+            <form id="regForm" action="/admin/salvar-aluno" method="POST">
+
+                
+                <div class="form-group">
+                    <label for="nomeAluno">Nome Completo</label>
+                    <input type="text" id="nomeAluno" name="nome" placeholder="Nome do estudante" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="classeAluno">Classe</label>
+                    <select name="classe" id="classeAluno" required>
+                        <option value="">Selecionar Classe</option>
+                        <option value="10">10ª classe</option>
+                        <option value="11">11ª classe</option>
+                        <option value="12">12ª classe</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="grupoAluno">Grupo</label>
+                    <select name="grupo" id="grupoAluno" required>
+                        <option value="">Selecionar Grupo</option>
+                        <option value="A">Grupo A</option>
+                        <option value="B">Grupo B</option>
+                        <option value="C">Grupo C</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="turmaAluno">Turma</label>
+                    <select name="turma" id="turmaAluno" required>
+                        <option value="">Selecionar Turma</option>
+                        {% for letra in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
+                            <option value="{{ letra }}">Turma {{ letra }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div id="id-bloco" class="form-group" style="display:none;">
+                    <label for="idGerado">ID Gerado</label>
+                    <p class="card-subtitle" style="margin-bottom:10px;">
+                        Guarde este ID. Ele será utilizado pelo estudante para aceder ao portal.
+                    </p>
+                    <div style="display:flex; gap:10px;">
+                        <input
+                            type="text"
+                            id="idGerado"
+                            value=""
+                            readonly
+                            style="flex:1; background:#f8fafc; font-weight:bold; color:#1e293b;">
+                        <button
+                            type="button"
+                            id="btnCopiar"
+                            class="btn-secondary"
+                            style="width:auto; padding:0 18px;">
+                            Copiar
+                        </button>
+                    </div>
+                </div>
+
+                <div class="action-buttons-row" style="display: flex; gap: 12px; margin-top: 20px;">
+                    <button type="submit" class="btn-primary" style="flex: 1;">
+                        Gravar Aluno
+                    </button>
+                    <button type="button" class="btn-secondary" onclick="window.history.back()" style="flex: 1;">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+
+            <div id="flash-success" class="flash success" role="status" style="display:none;">
+                <span style="text-align:center; flex:1;">
+                     Aluno registado com sucesso. O ID já pode ser copiado e entregue ao estudante.
+                </span>
+                <button id="flashClose" class="flash-close" aria-label="Fechar">×</button>
+            </div>
+        </section>
+    </main>
+
+</body>
+</html>

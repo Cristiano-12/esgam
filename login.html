@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Portal do Estudante da Escola Secundária Geral de Alto Molócuê">
+    <title>Portal do Estudante</title>
+
+    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="login.css">
+</head>
+
+<body>
+
+    <header class="main-header">
+        <img
+            src="imagens/logo.png"
+            alt="Logótipo da Escola Secundária Geral de Alto Molócuê"
+            class="logo">
+    </header>
+
+    <main>
+
+        <section
+            class="login-section"
+            aria-labelledby="login-title">
+
+            <h1 id="login-title">
+                ESGAM
+            </h1>
+
+            <p class="login-subtitle">
+                Insira as suas credenciais.
+            </p>
+
+            <form
+                id="loginForm"
+                method="post"
+                autocomplete="off"
+                novalidate>
+
+                <div class="input-field">
+
+                    <label for="studentID">
+                        ID do estudante
+                    </label>
+
+                    <input
+                        type="text"
+                        id="studentID"
+                        name="studentID"
+                        placeholder="Ex.: 202610045"
+                        required
+                        autofocus>
+
+                </div>
+
+                <div class="input-field">
+
+                    <label for="password">
+                        Senha
+                    </label>
+
+                    <div class="password-wrapper">
+
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder="Introduza a sua senha"
+                            required>
+
+                        <button
+                            type="button"
+                            id="togglePassword"
+                            aria-label="Mostrar ou ocultar senha">
+
+                            <svg
+                                id="eyeIcon"
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round">
+
+                                <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0Z"></path>
+
+                                <circle
+                                    cx="12"
+                                    cy="12"
+                                    r="3">
+                                </circle>
+
+                            </svg>
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <button type="submit">
+                    Entrar
+                </button>
+
+            </form>
+
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+
+        <p>
+            &copy; 2026 Escola Secundária Geral de Alto Molócuê. Todos os direitos reservados.
+        </p>
+
+    </footer>
+
+    <script src="login.js"></script>
+
+</body>
+</html>

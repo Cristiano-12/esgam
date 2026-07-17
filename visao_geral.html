@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central de Verifiacao-ESGAM</title>
+    <link rel="stylesheet" href="controle.css">
+    <link rel="stylesheet" href="global.css">
+</head>
+
+<body>
+
+    <main class="dashboard">
+        <div class="form-container" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+
+            <div class="top-grid"
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-bottom: 30px;">
+
+                <section class="card mini-card" style="text-align: center; padding: 15px;">
+                    <h2 style="font-size: 13px; color: #64748b; margin-bottom: 8px;">Total de alunos</h2>
+                    <div class="big-number" style="font-size: 28px; font-weight: bold; color: #0f172a;">{{ total_alunos
+                        }}</div>
+                </section>
+
+                <section class="card mini-card" style="text-align: center; padding: 15px;">
+                    <h2 style="font-size: 13px; color: #64748b; margin-bottom: 8px;">Total de Classes</h2>
+                    <div class="big-number" style="font-size: 28px; font-weight: bold; color: #0f172a;">
+                        {{ total_classes }}
+                    </div>
+                </section>
+
+                <section class="card mini-card" style="text-align: center; padding: 15px;">
+                    <h2 style="font-size: 13px; color: #64748b; margin-bottom: 8px;">Total de Turmas</h2>
+                    <div class="big-number" style="font-size: 28px; font-weight: bold; color: #0f172a;">
+                        {{ total_turmas }}
+                    </div>
+                </section>
+
+                <section class="card mini-card" style="text-align: center; padding: 15px;">
+                    <h2 style="font-size: 13px; color: #64748b; margin-bottom: 8px;">Total de Grupos</h2>
+                    <div class="big-number" style="font-size: 28px; font-weight: bold; color: #0f172a;">
+                        {{ total_grupos }}
+                    </div>
+                </section>
+
+                <section class="card mini-card" style="text-align: center; padding: 15px;">
+                    <h2 style="font-size: 13px; color: #64748b; margin-bottom: 8px;">Total de Avisos</h2>
+                    <div class="big-number" style="font-size: 28px; font-weight: bold; color: #0f172a;">
+                        {{ total_avisos }}
+                    </div>
+                </section>
+
+                <section class="card mini-card" style="text-align: center; padding: 15px;">
+                    <h2 style="font-size: 13px; color: #64748b; margin-bottom: 8px;">Consulta Pública</h2>
+                    <div class="big-number"
+                        style="font-size: 16px; font-weight: bold; color: #2563eb; margin-top: 10px;">
+                        {{ estado_consulta_publica }}
+                    </div>
+                </section>
+
+                <section class="card mini-card" style="text-align: center; padding: 15px;">
+                    <h2 style="font-size: 13px; color: #64748b; margin-bottom: 8px;">Portal do estudante</h2>
+                    <div class="big-number"
+                        style="font-size: 16px; font-weight: bold; color: #2563eb; margin-top: 10px;">
+                        {{ estado_portal_estudante }}
+                    </div>
+                </section>
+
+            </div>
+
+            <section class="card" style="margin-bottom: 30px;">
+                <h2>Lista Geral de IDs</h2>
+                <p class="card-subtitle" style="margin-bottom: 20px;">Filtre a listagem para localizar e copiar
+                    credenciais rapidamente.
+                </p>
+
+                <form class="admin-form" method="GET" action="/admin/central"
+                    style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 25px;">
+                    <div class="form-group" style="flex: 1; min-width: 150px;">
+                        <label>Classe</label>
+                        <select name="classe_filtro">
+                            <option value="" {% if request.args.get('classe_filtro')=='' %}selected{% endif %}>Todas
+                            </option>
+
+                            <option value="10" {% if request.args.get('classe_filtro')=='10' %}selected{% endif %}>
+                                10ª Classe
+                            </option>
+
+                            <option value="11" {% if request.args.get('classe_filtro')=='11' %}selected{% endif %}>
+                                11ª Classe
+                            </option>
+
+                            <option value="12" {% if request.args.get('classe_filtro')=='12' %}selected{% endif %}>
+                                12ª Classe
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="flex: 1; min-width: 150px;">
+                        <label>Grupo</label>
+                        <select name="grupo_filtro">
+                            <option value="" {% if request.args.get('grupo_filtro')=='' %}selected{% endif %}>Todos
+                            </option>
+
+                            <option value="A" {% if request.args.get('grupo_filtro')=='A' %}selected{% endif %}>
+                                Grupo A
+                            </option>
+
+                            <option value="B" {% if request.args.get('grupo_filtro')=='B' %}selected{% endif %}>
+                                Grupo B
+                            </option>
+
+                            <option value="C" {% if request.args.get('grupo_filtro')=='C' %}selected{% endif %}>
+                                Grupo C
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="flex: 1; min-width: 150px;">
+                        <label for="turmaAluno">Turma</label>
+                        <select name="turma" id="turmaAluno" required>
+                            <option value="">Selecionar Turma</option>
+                            {% for letra in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
+                            <option value="{{ letra }}">Turma {{ letra }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div style="display: flex; align-items: flex-end;">
+                        <button type="submit" class="btn-primary" style="padding: 12px 20px;">Filtrar</button>
+                    </div>
+                </form>
+
+                <div class="table-container">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #cbd5e1; background-color: #f8fafc;">
+                                <th style="padding: 10px 8px;">Nome Completo</th>
+                                <th style="padding: 10px 8px;">ID</th>
+                                <th style="padding: 10px 8px;">Classe</th>
+                                <th style="padding: 10px 8px;">Grupo</th>
+                                <th style="padding: 10px 8px;">Turma</th>
+                                <th style="padding: 10px 8px; text-align: center;">Acções</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for aluno in alunos %}
+                            <tr style="border-bottom: 1px solid #e2e8f0;">
+                                <td style="padding: 12px 8px; text-transform: uppercase; font-size: 13px;">{{ aluno.nome
+                                    }}</td>
+                                <td style="padding: 12px 8px; font-weight: bold; color: #0f172a;">{{ aluno.id }}</td>
+                                <td style="padding: 12px 8px;">{{ aluno.classe }}</td>
+                                <td style="padding: 12px 8px;">Grupo {{ aluno.grupo }}</td>
+                                <td style="padding: 12px 8px; font-weight: bold;">{{ aluno.turma }}</td>
+                                <td style="padding: 12px 8px; text-align: center;">
+                                    <button type="button" class="btn-secondary btn-copiar-id"
+                                        data-id="{{ aluno.id }}">
+                                        Copiar ID
+                                    </button>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" style="padding: 20px; text-align: center; color: #64748b;">Nenhum
+                                    estudante registado com este filtro
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 30px;">
+
+                <section class="card">
+                    <h2>Pesquisar aluno por ID</h2>
+                    <p class="card-subtitle" style="margin-bottom: 15px;">Insira o ID exato para puxar a ficha
+                        operacional.
+                    </p>
+                    <form class="admin-form" method="GET" action="/admin/central">
+                        <div class="form-group">
+                            <label>ID do Estudante</label>
+                            <input type="text" name="pesquisa_id" placeholder="Digita o ID do aluno..." required>
+                        </div>
+                        <button type="submit" class="btn-primary">Procurar</button>
+                    </form>
+                </section>
+
+                <section class="card">
+                    <h2>Resultado da pesquisa</h2>
+                    {% if aluno_pesquisado %}
+                    <div class="student-vertical-info"
+                        style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0; line-height: 1.8;">
+                        <p style="margin: 5px 0;"><strong>Nome:</strong> <span style="text-transform: uppercase;">{{
+                                aluno_pesquisado.nome }}</span></p>
+                        <p style="margin: 5px 0;"><strong>ID:</strong> <span
+                                style="color: #2563eb; font-weight: bold;">{{ aluno_pesquisado.id }}</span></p>
+                        <p style="margin: 5px 0;"><strong>Classe:</strong> {{ aluno_pesquisado.classe }}ª Classe</p>
+                        <p style="margin: 5px 0;"><strong>Grupo:</strong> Grupo {{ aluno_pesquisado.grupo }}</p>
+                        <p style="margin: 5px 0;"><strong>Turma:</strong> Turma {{ aluno_pesquisado.turma }}</p>
+                        <p style="margin: 5px 0;"><strong>Situação:</strong> <span class="status-tag"
+                                style="font-weight: bold;">{{ aluno_pesquisado.situacao }}</span></p>
+                        <p style="margin: 5px 0;"><strong>Estado:</strong> <span class="status-tag"
+                                style="font-weight: bold;">{{ aluno_pesquisado.estado }}</span></p>
+                    </div>
+                    <div class="action-buttons-row" style="display: flex; gap: 10px;">
+                        <a href="/aluno/portal/{{ aluno_pesquisado.id }}" target="_blank" class="btn-primary"
+                            style="text-decoration: none; flex: 1; text-align: center; line-height: 40px; padding: 0;">Abrir
+                            Portal</a>
+                        <a href="/admin/gestao-alunos?pesquisa={{ aluno_pesquisado.id }}" class="btn-secondary"
+                            style="text-decoration: none; flex: 1; text-align: center; line-height: 40px; padding: 0;">Editar
+                            Aluno
+                        </a>
+                    </div>
+                    {% else %}
+                    <div style="text-align: center; padding: 40px 20px; color: #64748b;">
+                        <p>Nenhum Aluno selecionado ou pesquisado no momento.</p>
+                    </div>
+                    {% endif %}
+                </section>
+
+            </div>
+
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 30px;">
+
+                <section class="card">
+                    <h2>Verificação das Pautas</h2>
+                    <p class="card-subtitle" style="margin-bottom: 20px;">Visualize exatamente o espelho das listas
+                        publicadas para os alunos.
+                    </p>
+                    <div class="action-buttons-row" style="display: flex; gap: 10px;">
+                        <a href="/consulta-turmas?classe=10" target="_blank" class="btn-primary"
+                            style="text-decoration: none; flex: 1; text-align: center; padding: 12px 0;">
+                            10ª Classe
+                        </a>
+                        <a href="/consulta-turmas?classe=11" target="_blank" class="btn-primary"
+                            style="text-decoration: none; flex: 1; text-align: center; padding: 12px 0;">
+                            11ª Classe
+                        </a>
+                        <a href="/consulta-turmas?classe=12" target="_blank" class="btn-primary"
+                            style="text-decoration: none; flex: 1; text-align: center; padding: 12px 0;">
+                            12ª Classe
+                        </a>
+                    </div>
+                </section>
+
+                <section class="card">
+
+
+                    <h2>Controlo de Acesso</h2>
+
+                    <p class="card-subtitle">
+                        Abra ou feche os módulos públicos do sistema.
+                    </p>
+
+                    <form action="/admin/controlar-sistema" method="POST" class="vertical-actions">
+
+                        {% if portal_notas_aberto %}
+                        <button type="submit" name="acao" value="portal_notas" class="btn-danger"
+                            onclick="return confirm('Tens certeza que queres fechar o Portal do Estudante?');">
+                            Fechar Portal do Estudante
+                        </button>
+                        {% else %}
+                        <button type="submit" name="acao" value="portal_notas" class="btn-primary"
+                            onclick="return confirm('Tens certeza que queres abrir o Portal do Estudante?');">
+                            Abrir Portal do Estudante
+                        </button>
+                        {% endif %}
+
+                        {% if portal_pauta_aberto %}
+                        <button type="submit" name="acao" value="pautas_publicas" class="btn-danger"
+                            onclick="return confirm('Tens certeza que queres fechar as Pautas Públicas?');">
+                            Fechar Pautas Públicas
+                        </button>
+                        {% else %}
+                        <button type="submit" name="acao" value="pautas_publicas" class="btn-primary"
+                            onclick="return confirm('Tens certeza que queres abrir as Pautas Públicas?');">
+                            Abrir Pautas Públicas
+                        </button>
+                        {% endif %}
+
+                        {% if portal_notas_aberto and portal_pauta_aberto %}
+                        <button type="submit" name="acao" value="abrir_tudo" class="btn-secondary" disabled
+                            style="margin-top: 15px;">
+                            Todos os Módulos já estão abertos
+                        </button>
+                        {% else %}
+                        <button type="submit" name="acao" value="abrir_tudo" class="btn-primary"
+                            onclick="return confirm('Tens certeza que queres abrir todos módulos?');">
+                            Abrir Todos os módulos
+                        </button>
+                        {% endif %}
+
+                        {% if not portal_notas_aberto and not portal_pauta_aberto %}
+                        <button type="button" class="btn-secondary" disabled>
+                            Todos os Módulos já fechados
+                        </button>
+                        {% else %}
+                        <button type="submit" name="acao" value="fechar_tudo" class="btn-danger"
+                            onclick="return confirm('Tens certeza que queres fechar todos módulos?');">
+                            Fechar todos Módulos
+                        </button>
+                        {% endif %}
+
+                    </form>
+
+                </section>
+
+                <section class="card">
+                    <h2>Controlo Específico</h2>
+
+                    <form action="/admin/controlo-especifico" method="GET">
+
+                        <div class="form-group">
+                            <label for="tipoPesquisa">Pesquisar por</label>
+
+                            <select id="tipoPesquisa" name="tipo" required>
+                                <option value="" selected disabled>Selecione o tipo de pesquisa</option>
+                                <option value="classe">Classe</option>
+                                <option value="turma">Turma</option>
+                                <option value="grupo">Grupo</option>
+                                <option value="aluno">Aluno</option>
+                            </select>
+                        </div>
+
+                        <!-- Classe -->
+                        <div class="form-group campo campo-classe" style="display:none;">
+                            <label>Classe</label>
+                            <select name="classe">
+                                <option value="">Selecione a classe</option>
+                                <option value="10">10ª Classe</option>
+                                <option value="11">11ª Classe</option>
+                                <option value="12">12ª Classe</option>
+                            </select>
+                        </div>
+
+                        <!-- Turma -->
+                        <div class="form-group campo campo-turma" style="display:none;">
+                            <label>Turma</label>
+                            <input type="text" name="turma" maxlength="1" placeholder="Ex.: A">
+                        </div>
+
+                        <!-- Grupo -->
+                        <div class="form-group campo campo-grupo" style="display:none;">
+                            <label>Grupo</label>
+                            <select name="grupo">
+                                <option value="">Selecione o grupo</option>
+                            </select>
+                        </div>
+
+                        <!-- Aluno -->
+                        <div class="form-group campo campo-aluno" style="display:none;">
+                            <label>ID do Aluno</label>
+                            <input type="text" name="id" placeholder="Digite o ID do aluno">
+                        </div>
+
+                        <button type="submit" class="btn-primary">
+                            Pesquisar
+                        </button>
+
+                    </form>
+                </section>
+            </div>
+
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 30px;">
+
+                <section class="card">
+                    <h2>Avisos Publicados</h2>
+
+                    <h3 style="font-size: 15px; color: #1e293b; margin-top: 15px; margin-bottom: 10px;">Avisos Gerais
+                    </h3>
+                    <ul style="padding-left: 20px; color: #475569; line-height: 1.6;">
+                        {% for aviso in avisos_gerais %}
+                        <li>{{ aviso }}</li>
+                        {% else %}
+                        <li style="list-style: none; color: #94a3b8; margin-left: -20px;">Nenhum aviso geral ativo</li>
+                        {% endfor %}
+                    </ul>
+
+                    <hr class="form-divider" style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+
+                    <h3 style="font-size: 15px; color: #1e293b; margin-bottom: 10px;">Avisos Individuais</h3>
+                    <ul style="padding-left: 20px; color: #475569; line-height: 1.6;">
+                        {% for aviso in avisos_individuais %}
+                        <li>{{ aviso }}</li>
+                        {% else %}
+                        <li style="list-style: none; color: #94a3b8; margin-left: -20px;">Nenhum aviso individual
+                            emitido.
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </section>
+
+                <section class="card">
+                    <h2>Estrutura Escolar Activas</h2>
+                    <p class="card-subtitle" style="margin-bottom: 15px;">Mapeamento de divisoes logicas do banco de
+                        dados.
+                    </p>
+                    <div class="student-vertical-info"
+                        style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; max-height: 220px; overflow-y: auto;">
+                        <p style="margin: 0 0 5px 0;"><strong></strong>
+                            10ª classe
+                        </p>
+                        <p style="margin: 0 0 5px 15px; color: #475569; font-size: 13px;">@ Grupo A | @ Grupo B | @
+                            Grupo C
+                        </p>
+
+                        <p style="margin: 15px 0 5px 0;"><strong></strong>11ª classe</p>
+                        <p style="margin: 0 0 5px 15px; color: #475569; font-size: 13px;">@ Grupo A | @ Grupo B | @
+                            Grupo C
+                        </p>
+
+                        <p style="margin: 15px 0 5px 0;"><strong></strong>12ª classe</p>
+                        <p style="margin: 0 0 5px 15px; color: #475569; font-size: 13px;">@ Grupo A | @ Grupo B | @
+                            Grupo C
+                        </p>
+                    </div>
+                </section>
+
+            </div>
+
+            <section class="card">
+                <h2 style="color: #ef4444;">Inconsistência e problemas detetados</h2>
+                <p class="card-subtitle" style="margin-bottom: 20px;">Lista de erros detetados automaticamente durante o
+                    cruzamento das tabelas do Excel com o banco de dados.
+                </p>
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #ef4444; background-color: #fef2f2;">
+                            <th style="padding: 10px 8px; color: #991b1b;">ID aluno</th>
+                            <th style="padding: 10px 8px; color: #991b1b;">Nome do Estudante</th>
+                            <th style="padding: 10px 8px; color: #991b1b;">Anomalia detetada pelo sistema</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for erro in problemas %}
+                        <tr style="border-bottom: 1px solid #fee2e2; background-color: #fffafb;">
+                            <td style="padding: 12px 8px; font-weight: bold; color: #b91c1c;">{{ erro.id }}</td>
+                            <td style="padding: 12px 8px; text-transform: uppercase; font-size: 13px; color: #7f1d1d;">
+                                {{ erro.nome }}</td>
+                            <td style="padding: 12px 8px; color: #991b1b; font-weight: 500;">
+                                X {{ erro.problema }}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3"
+                                style="padding: 25px; text-align: center; color: #16a34a; font-weight: bold; background-color: #f0fdf4;">
+                                Excelente! Nenhuma duplicação ou erro de alocação encontrada no banco de dados.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+            </section>
+
+        </div>
+
+        <div style="margin-top: 40px; text-align: center;">
+            <a href="/controle.html" class="btn-secondary"
+                style="text-decoration: none; display: inline-block; padding: 12px 18px; font-weight: bold;">
+                Voltar 
+            </a>
+        </div>
+        </div>
+    </main>
+
+</body>
+
+</html>

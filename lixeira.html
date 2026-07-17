@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lixeira do Sistema - ESGAM</title>
+    <link rel="stylesheet" href="controle.css">
+    <link rel="stylesheet" href="global.css">
+</head>
+<body>
+
+    
+
+    <main class="dashboard">
+        <div class="form-container" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+
+            <div class="top-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px;">
+
+                <section class="card mini-card" style="text-align: center; padding: 15px;">
+                    <h3 style="font-size: 13px; color: #64748b; margin-bottom: 5px;">Alunos</h3>
+                    <div class="big-number" style="font-size: 28px; font-weight: bold; color: #0f1720;">{{ total_alunos_lixeira }}</div>
+                </section>
+
+                <section class="card mini-card" style="text-align: center; padding: 15px;">
+                    <h3 style="font-size: 13px; color: #64748b; margin-bottom: 5px;">Turmas</h3>
+                    <div class="big-number" style="font-size: 28px; font-weight: bold; color: #0f1720;">{{ total_turmas_lixeira }}</div>
+                </section>
+
+                <section class="card mini-card" style="text-align: center; padding: 15px;">
+                    <h3 style="font-size: 13px; color: #64748b; margin-bottom: 5px;">Grupos</h3>
+                    <div class="big-number" style="font-size: 28px; font-weight: bold; color: #0f1720;">{{ total_grupos_lixeira }}</div>
+                </section>
+
+                <section class="card mini-card" style="text-align: center; padding: 15px;">
+                    <h3 style="font-size: 13px; color: #64748b; margin-bottom: 5px;">Classes</h3>
+                    <div class="big-number" style="font-size: 28px; font-weight: bold; color: #0f1720;">{{ total_classes_lixeira }}</div>
+                </section>
+
+            </div>
+
+            <section class="card" style="margin-bottom: 25px;">
+                <h3>Pesquisar na Lixeira</h3>
+                <form id="filtroLixeira" action="/admin/lixeira" method="GET" class="admin-form" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                    <div class="form-group" style="flex:1; min-width:280px; margin-bottom:0;">
+                        <label for="pesquisaLixeira">🔍 Procurar</label>
+                        <input type="text" id="pesquisaLixeira" name="pesquisa" placeholder="EX.: ESG123456 | 10A | 10/C | 10C/A" style="width:100%;">
+                    </div>
+                    <div class="form-group" style="min-width:180px; margin-bottom:0;">
+                        <label for="categoriaLixeira">Pesquisar por</label>
+                        <select id="categoriaLixeira" name="categoria" style="width:100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                            <option value="tudo">Tudo</option>
+                            <option value="alunos">Alunos</option>
+                            <option value="turmas">Turmas</option>
+                            <option value="grupos">Grupos</option>
+                            <option value="classes">Classes</option>
+                        </select>
+                    </div>
+                    <button type="submit" id="btnPesquisar" class="btn-primary btn-small" style="align-self:flex-end; margin-left:8px;">Pesquisar</button>
+                </form>
+                <div id="lixeiraVaziaAviso" style="display:none; margin-top: 18px; padding: 14px 16px; border-radius: 12px; background: #f8fafc; color: #334155; border: 1px solid #cbd5e1;">
+                    🗑️ A lixeira está vazia. Não existem registos eliminados.
+                </div>
+            </section>
+
+            <section class="card" style="margin-bottom: 25px;">
+                <h2>Recuperação Geral</h2>
+                <p class="card-subtitle" style="margin-bottom: 15px;">Ação em massa para manutenção preventiva do sistema.</p>
+                <div class="action-buttons-row" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <form action="/admin/lixeira/restaurar-tudo" method="POST" style="margin: 0;" onsubmit="return confirm('Tem certeza que pretende restaurar todos os registos da lixeira?');">
+                        <button type="submit" class="btn-primary" style="padding: 10px 20px;">Restaurar Tudo</button>
+                    </form>
+                    <form action="/admin/lixeira/esvaziar" method="POST" style="margin: 0;" onsubmit="return confirm('Aviso: Esta ação irá apagar definitivamente todos os dados da lixeira sem retorno. Continuar?');">
+                        <button type="submit" class="btn-danger" style="background-color: #dc2626; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                            Esvaziar Lixeira
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <section class="card" style="margin-bottom: 25px;">
+                <h2>Classes Eliminadas</h2>
+                <div class="table-container">
+                    <table id="classesTabela" style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #cbd5e1; background-color: #f8fafc;">
+                                <th style="padding: 10px 8px;">Classe</th>
+                                <th style="padding: 10px 8px;">Grupos</th>
+                                <th style="padding: 10px 8px;">Turmas</th>
+                                <th style="padding: 10px 8px;">Alunos</th>
+                                <th style="padding: 10px 8px;">Eliminada em</th>
+                                <th style="padding: 10px 8px;">Dias restantes</th>
+                                <th style="padding: 10px 8px; text-align: center;">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for classe in classes_eliminadas %}
+                            <tr class="data-row" style="border-bottom: 1px solid #e2e8f0;">
+                                <td style="padding: 12px 8px; font-weight: bold;">{{ classe.nome }}ª Classe</td>
+                                <td style="padding: 12px 8px;">{{ classe.total_grupos }}</td>
+                                <td style="padding: 12px 8px;">{{ classe.total_turmas }}</td>
+                                <td style="padding: 12px 8px;">{{ classe.total_alunos }}</td>
+                                <td style="padding: 12px 8px; color: #64748b;">
+                                    <div>Eliminado em: {{ classe.data_eliminacao }}</div>
+                                    <div>Será apagado em: {{ classe.data_final_eliminacao }}</div>
+                                    {% if classe.motivo_eliminacao %}
+                                    <div style="font-size:0.85rem; color:#475569;">Eliminado por: {{ classe.motivo_eliminacao }}</div>
+                                    {% endif %}
+                                </td>
+                                <td class="{% if classe.dias_restantes <= 2 %}status-danger{% elif classe.dias_restantes <= 5 %}status-warning{% endif %}" style="padding: 12px 8px; font-weight: bold;">{{ classe.dias_restantes }} dias</td>
+                                <td style="padding: 8px; text-align: center;">
+                                    <form action="/admin/lixeira/restaurar/classe/{{ classe.id }}" method="POST" style="margin: 0;">
+                                        <button type="submit" class="btn-success" style="padding: 6px 12px; font-size: 12px;">Restaurar</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else  %}
+                            <tr class="empty-row">
+                                <td colspan="7" style="padding: 15px; text-align: center; color: #94a3b8;">Nenhuma classe na lixeira.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="card" style="margin-bottom: 25px;">
+                <h2>Grupos Eliminados</h2>
+                <div class="table-container">
+                    <table id="gruposTabela" style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #cbd5e1; background-color: #f8fafc;">
+                                <th style="padding: 10px 8px;">Classe</th>
+                                <th style="padding: 10px 8px;">Grupo</th>
+                                <th style="padding: 10px 8px;">Turmas</th>
+                                <th style="padding: 10px 8px;">Alunos</th>
+                                <th style="padding: 10px 8px;">Eliminada em</th>
+                                <th style="padding: 10px 8px;">Dias restantes</th>
+                                <th style="padding: 10px 8px; text-align: center;">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for grupo in grupos_eliminados %}
+                            <tr class="data-row" style="border-bottom: 1px solid #e2e8f0;">
+                                <td style="padding: 12px 8px;">{{ grupo.classe }}ª Classe</td>
+                                <td style="padding: 12px 8px; font-weight: bold;">Grupo {{ grupo.nome }}</td>
+                                <td style="padding: 12px 8px;">{{ grupo.total_turmas }}</td>
+                                <td style="padding: 12px 8px;">{{ grupo.total_alunos }}</td>
+                                <td style="padding: 12px 8px; color: #64748b;">
+                                    <div>Eliminado em: {{ grupo.data_eliminacao }}</div>
+                                    <div>Será apagado em: {{ grupo.data_final_eliminacao }}</div>
+                                    {% if grupo.motivo_eliminacao %}
+                                    <div style="font-size:0.85rem; color:#475569;">Eliminado por: {{ grupo.motivo_eliminacao }}</div>
+                                    {% endif %}
+                                </td>
+                                <td class="{% if grupo.dias_restantes <= 2 %}status-danger{% elif grupo.dias_restantes <= 5 %}status-warning{% endif %}" style="padding: 12px 8px; font-weight: bold;">{{ grupo.dias_restantes }} dias</td>
+                                <td style="padding: 8px; text-align: center;">
+                                    <form action="/admin/lixeira/restaurar/grupo/{{ grupo.id }}" method="POST" style="margin: 0;">
+                                        <button type="submit" class="btn-success" style="padding: 6px 12px; font-size: 12px;">Restaurar</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr class="empty-row">
+                                <td colspan="7" style="padding: 15px; text-align: center; color: #94a3b8;">Nenhum grupo na lixeira.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="card" style="margin-bottom: 25px;">
+                <h2>Turmas Eliminadas</h2>
+                <div class="table-container">
+                    <table id="turmasTabela" style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #cbd5e1; background-color: #f8fafc;">
+                                <th style="padding: 10px 8px;">Classe</th>
+                                <th style="padding: 10px 8px;">Grupo</th>
+                                <th style="padding: 10px 8px;">Turma</th>
+                                <th style="padding: 10px 8px;">Aluno</th>
+                                <th style="padding: 10px 8px;">Eliminada em</th>
+                                <th style="padding: 10px 8px;">Dias restantes</th>
+                                <th style="padding: 10px 8px; text-align: center;">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for turma in turmas_eliminadas %}
+                            <tr class="data-row" style="border-bottom: 1px solid #e2e8f0;">
+                                <td style="padding: 12px 8px;">{{ turma.classe }}ª Classe</td>
+                                <td style="padding: 12px 8px;">{{ turma.grupo }}</td>
+                                <td style="padding: 12px 8px; font-weight: bold;">{{ turma.nome }}</td>
+                                <td style="padding: 12px 8px;">{{ turma.total_alunos }}</td>
+                                <td style="padding: 12px 8px; color: #64748b;">
+                                    <div>Eliminado em: {{ turma.data_eliminacao }}</div>
+                                    <div>Será apagado em: {{ turma.data_final_eliminacao }}</div>
+                                    {% if turma.motivo_eliminacao %}
+                                    <div style="font-size:0.85rem; color:#475569;">Eliminado por: {{ turma.motivo_eliminacao }}</div>
+                                    {% endif %}
+                                </td>
+                                <td class="{% if turma.dias_restantes <= 2 %}status-danger{% elif turma.dias_restantes <= 5 %}status-warning{% endif %}" style="padding: 12px 8px; font-weight: bold;">{{ turma.dias_restantes }} dias</td>
+                                <td style="padding: 8px; text-align: center; display:flex; justify-content:center; gap:6px;">
+                                    <button type="button" class="btn-secondary btn-small btn-ver-detalhes" data-target="detalhes-turma-{{ turma.id }}">Ver alunos</button>
+                                    <form action="/admin/lixeira/restaurar/turma/{{ turma.id }}" method="POST" style="margin: 0;">
+                                        <button type="submit" class="btn-success btn-small" style="padding: 6px 12px; font-size: 12px;">Restaurar</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <tr class="detalhes-turma-row" id="detalhes-turma-{{ turma.id }}" style="display:none; background:#f8fafc;">
+                                <td colspan="7" style="padding: 12px 8px;">
+                                    {% if turma.alunos %}
+                                    <div style="font-size:0.95rem; color:#1f2937; font-weight:600; margin-bottom:8px;">Alunos desta turma:</div>
+                                    <ul style="padding-left:18px; margin:0; color:#475569;">
+                                        {% for aluno in turma.alunos %}
+                                        <li>{{ aluno.id }} — {{ aluno.nome }} ({{ aluno.classe }}ª - Grupo {{ aluno.grupo }} - Turma {{ aluno.turma }})</li>
+                                        {% endfor %}
+                                    </ul>
+                                    {% else %}
+                                    <div style="color:#475569;">Sem alunos disponíveis para esta turma.</div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr class="empty-row">
+                                <td colspan="7" style="padding:15px; text-align:center; color:#94a3b8;">
+                                    Nenhuma turma na lixeira.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="card" style="margin-bottom:25px;">
+                <h2>Alunos Eliminados</h2>
+
+                <div class="table-container">
+                    <table id="alunosTabela" style="width:100%; border-collapse:collapse; text-align:left;">
+
+                        <thead>
+                            <tr style="border-bottom:2px solid #cbd5e1; background:#f8fafc;">
+                                <th style="padding:10px 8px;">ID</th>
+                                <th style="padding:10px 8px;">Nome</th>
+                                <th style="padding:10px 8px;">Classe</th>
+                                <th style="padding:10px 8px;">Grupo</th>
+                                <th style="padding:10px 8px;">Turma</th>
+                                <th style="padding:10px 8px;">Eliminado em</th>
+                                <th style="padding:10px 8px;">Dias restantes</th>
+                                <th style="padding:10px 8px; text-align:center;">Ação</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                        {% for aluno in alunos_eliminados %}
+                            <tr class="data-row" style="border-bottom:1px solid #e2e8f0;">
+                                <td style="padding:12px 8px;">{{ aluno.id }}</td>
+                                <td style="padding:12px 8px;">{{ aluno.nome }}</td>
+                                <td style="padding:12px 8px;">{{ aluno.classe }}</td>
+                                <td style="padding:12px 8px;">{{ aluno.grupo }}</td>
+                                <td style="padding:12px 8px;">{{ aluno.turma }}</td>
+                                <td style="padding:12px 8px; color: #64748b;">
+                                    <div>Eliminado em: {{ aluno.data_eliminacao }}</div>
+                                    <div>Será apagado em: {{ aluno.data_final_eliminacao }}</div>
+                                    {% if aluno.motivo_eliminacao %}
+                                    <div style="font-size:0.85rem; color:#475569;">Eliminado por: {{ aluno.motivo_eliminacao }}</div>
+                                    {% endif %}
+                                </td>
+                                <td class="{% if aluno.dias_restantes <= 2 %}status-danger{% elif aluno.dias_restantes <= 5 %}status-warning{% endif %}" style="padding:12px 8px; font-weight:bold;">
+                                    {{ aluno.dias_restantes }} dias
+                                </td>
+                                <td style="padding:12px 8px; text-align:center;">
+                                    <form action="/admin/lixeira/restaurar/aluno/{{ aluno.id }}" method="POST">
+                                        <button type="submit" class="btn-success">
+                                            Restaurar
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr class="empty-row">
+                                <td colspan="8" style="padding:20px; text-align:center; color:#94a3b8;">
+                                    Nenhum aluno em estado de remoção temporária.
+                                </td>
+                            </tr>
+                        {% endfor %}
+
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="card" style="margin-bottom:25px;">
+                <h2>Regras de Integridade Operacional</h2>
+
+                <p class="card-subtitle" style="margin-bottom:15px;">
+                    Entenda como funciona o efeito cascata da recuperação de dados.
+                </p>
+
+                <ul style="padding-left:20px; color:#475569; line-height:1.8; font-size:14px;">
+                    <li>Os registos permanecem guardados durante <strong>10 dias</strong>.</li>
+                    <li>A restauração simples devolve o registo ao local original.</li>
+                    <li><strong style="color:#2563eb;">Efeito Cascata:</strong> restaurar uma classe recupera automaticamente grupos, turmas e alunos.</li>
+                    <li>O mesmo comportamento aplica-se às turmas e grupos.</li>
+                </ul>
+            </section>
+
+            <div style="text-align:center; margin-top:30px;">
+                <a href="/admin"
+                class="btn-secondary"
+                style="display:inline-block; text-decoration:none; padding:10px 24px; font-weight:bold;">
+                    Voltar ao Painel Principal
+                </a>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function(){
+        // Toggle detalhes das turmas
+        document.addEventListener('click', function(e){
+            const btn = e.target.closest && e.target.closest('.btn-ver-detalhes');
+            if (!btn) return;
+            const targetId = btn.dataset.target;
+            if (!targetId) return;
+            const row = document.getElementById(targetId);
+            if (!row) return;
+            const isHidden = row.style.display === 'none' || getComputedStyle(row).display === 'none';
+            row.style.display = isHidden ? '' : 'none';
+            btn.setAttribute('aria-expanded', String(isHidden));
+        });
+
+        // Limpar filtros localmente (não altera envio do formulário)
+        const btnLimpar = document.getElementById('btnLimparFiltro');
+        if (btnLimpar){
+            btnLimpar.addEventListener('click', function(){
+                const input = document.getElementById('pesquisaLixeira');
+                const select = document.getElementById('categoriaLixeira');
+                if (input) input.value = '';
+                if (select) select.value = 'tudo';
+                // Mostrar todas as linhas de dados
+                document.querySelectorAll('.data-row').forEach(r => r.style.display = '');
+                document.querySelectorAll('.detalhes-turma-row').forEach(r => r.style.display = 'none');
+                const aviso = document.getElementById('lixeiraVaziaAviso');
+                if (aviso) aviso.style.display = 'none';
+            });
+        }
+    });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESGAM - Escola Secundária Geral de Alto Molócuè</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+<a href="#main-content" class="skip-to-content">Saltar para o conteúdo principal</a>
+ 
+<header class="site-header" id="site-header">
+    <div class="container header-inner">
+        <div class="header-top-row">
+            <a class="brand" href="#top" aria-label="ESGAM - Página Inicial">
+                <img src="imagens/logo.png" alt="Logótipo oficial da ESGAM">
+                <div>
+                    <strong>ESGAM</strong>
+                    <span>Sistema de Gestão Escolar</span>
+                </div>
+            </a>
+ 
+            <div class="header-actions-bar">
+                {% if portal_disponivel %}
+                <a class="btn btn-primary" href="login.html">Entrar</a>
+                {% else %}
+                <button type="button" class="btn btn-primary is-disabled" disabled title="{{ portal_mensagem }}">Entrar</button>
+                {% endif %}
+ 
+                {% if turmas_disponivel %}
+                <a class="btn btn-outline-primary" href="/consulta-turmas">Ver Turmas</a>
+                {% else %}
+                <button type="button" class="btn btn-outline-primary is-disabled" disabled title="{{ turmas_mensagem }}">Ver Turmas</button>
+                {% endif %}
+ 
+                <button class="menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="primary-nav" aria-label="Abrir menu">
+                    <span class="hamburger" aria-hidden="true"></span>
+                </button>
+            </div>
+        </div>
+ 
+        <!-- Menu principal: apenas "Perguntas Frequentes", em formato accordion (+ / ×) -->
+        <nav class="site-nav" id="primary-nav" aria-label="Menu principal">
+ 
+            <div class="nav-accordion-item">
+                <button class="nav-question" data-menu-toggle="faq" aria-expanded="false" aria-controls="pane-faq">
+                    <span>Perguntas Frequentes</span>
+                    <span class="nav-icon" aria-hidden="true">+</span>
+                </button>
+                <div class="nav-answer" id="pane-faq">
+                    <div class="nav-answer-inner">
+                        <div class="faq-list">
+                            <!-- 3 perguntas fixas -->
+                            <div class="faq-item">
+                                <button class="faq-question" data-faq-toggle aria-expanded="false">
+                                    <span>Como consultar as pautas do meu educando?</span>
+                                    <span class="faq-icon" aria-hidden="true">+</span>
+                                </button>
+                                <div class="faq-answer">
+                                    <div class="faq-answer-inner">Aceda ao Portal do Estudante com as credenciais fornecidas pela secretaria.</div>
+                                </div>
+                            </div>
+                            <div class="faq-item">
+                                <button class="faq-question" data-faq-toggle aria-expanded="false">
+                                    <span>Como faço a matrícula do meu educando?</span>
+                                    <span class="faq-icon" aria-hidden="true">+</span>
+                                </button>
+                                <div class="faq-answer">
+                                    <div class="faq-answer-inner">A matrícula é feita presencialmente na secretaria, mediante apresentação dos documentos exigidos.</div>
+                                </div>
+                            </div>
+                            <div class="faq-item">
+                                <button class="faq-question" data-faq-toggle aria-expanded="false">
+                                    <span>Como posso contactar a direção da escola?</span>
+                                    <span class="faq-icon" aria-hidden="true">+</span>
+                                </button>
+                                <div class="faq-answer">
+                                    <div class="faq-answer-inner">Pode contactar-nos através do e-mail ou telefone indicados no rodapé desta página.</div>
+                                </div>
+                            </div>
+ 
+                            <!-- Perguntas dinâmicas vindas do Jinja -->
+                            {% for f in faq_dinamico %}
+                            <div class="faq-item">
+                                <button class="faq-question" data-faq-toggle aria-expanded="false">
+                                    <span>{{ f.pergunta }}</span>
+                                    <span class="faq-icon" aria-hidden="true">+</span>
+                                </button>
+                                <div class="faq-answer">
+                                    <div class="faq-answer-inner">{{ f.resposta }}</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+ 
+        </nav>
+    </div>
+</header>
+ 
+<div class="status-banner" data-status="{{ banner.status }}" id="status-banner">
+    <div class="container status-banner-inner">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span class="status-text"><strong>{{ banner.titulo }}</strong> — {{ banner.mensagem }}</span>
+        {% if banner.link %}
+        <a href="{{ banner.link }}" class="status-link">{{ banner.link_texto }}</a>
+        {% endif %}
+    </div>
+</div>
+ 
+<main id="main-content">
+ 
+    <!-- CARROSSEL PRINCIPAL — DINÂMICO VIA JINJA, LIMITADO A NO MÁXIMO 5 FOTOS -->
+    <section class="hero-section" id="top" aria-roledescription="carrossel" aria-label="Destaques institucionais">
+        <div class="hero-slider" id="hero-slider">
+            {% for foto in fotos_carrossel[:5] %}
+            <div class="hero-slide {% if loop.first %}active{% endif %}" aria-hidden="{% if loop.first %}false{% else %}true{% endif %}">
+                <img src="{{ url_for('static', filename='uploads/' + foto.imagem) }}" alt="{{ foto.descricao }}">
+            </div>
+            {% endfor %}
+        </div>
+ 
+        <div class="hero-overlay">
+            <div class="container hero-content">
+                <div class="hero-badge">
+                    <span class="geo-tag">📍 Alto Molócuè, Zambézia, Moçambique</span>
+                </div>
+                <h1>Gestão escolar moderna, clara e eficiente.</h1>
+                <p>Uma plataforma institucional concebida para gerir o percurso académico, organizar pautas e estreitar a comunicação.</p>
+            </div>
+        </div>
+ 
+        <!-- Controlos com os caracteres estruturais < e > solicitados e paginação dinâmica -->
+        <div class="hero-controls-wrapper">
+            <button class="hero-arrow" type="button" data-hero-prev aria-label="Slide anterior">&lt;</button>
+            <div class="hero-dots" aria-label="Paginação do carrossel">
+                {% for foto in fotos_carrossel[:5] %}
+                <button class="dot {% if loop.first %}active{% endif %}" data-slide="{{ loop.index0 }}" aria-label="Ir para o slide {{ loop.index }}">
+                    <span class="progress-bar"></span>
+                </button>
+                {% endfor %}
+            </div>
+            <button class="hero-arrow" type="button" data-hero-next aria-label="Próximo slide">&gt;</button>
+        </div>
+    </section>
+ 
+    <!-- ESTATÍSTICAS -->
+    <section class="stats-strip" id="estatisticas">
+        <div class="container">
+            <div class="stats-grid">
+                {% for stat in estatisticas %}
+                <div class="stat-box">
+                    <strong class="stat-number" {% if stat.animar %}data-target="{{ stat.valor }}"{% else %}data-no-anim="true"{% endif %}>{{ 0 if stat.animar else stat.valor }}</strong>{% if stat.sufixo %}<span class="stat-suffix">{{ stat.sufixo }}</span>{% endif %}
+                    <span class="stat-label">{{ stat.label }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+ 
+    <!-- SERVIÇOS (antes no menu; agora secção própria) -->
+    <section class="section" id="servicos">
+        <div class="container">
+            <div class="section-heading center">
+                <p class="eyebrow">O que oferecemos</p>
+                <h2>Serviços</h2>
+            </div>
+            <div class="service-grid">
+                <article class="service-card {% if not portal_disponivel %} is-unavailable{% endif %}" {% if not portal_disponivel %}title="{{ portal_mensagem }}"{% endif %}>
+                    <div class="service-icon">🎓</div>
+                    <h3>Portal do Estudante</h3>
+                    <p>Acesso imediato a pautas de avaliação, faltas e materiais pedagógicos.</p>
+                    {% if not portal_disponivel %} <span class="badge badge-neutral">Indisponível</span> {% endif %}
+                </article>
+                <article class="service-card {% if not turmas_disponivel %} is-unavailable{% endif %}" {% if not turmas_disponivel %}title="{{ turmas_mensagem }}"{% endif %}>
+                    <div class="service-icon">📚</div>
+                    <h3>Gestão Académica</h3>
+                    <p>Controle centralizado de processos de matrícula e histórico consolidado.</p>
+                    {% if not turmas_disponivel %} <span class="badge badge-neutral">Indisponível</span> {% endif %}
+                </article>
+                <article class="service-card">
+                    <div class="service-icon">📢</div>
+                    <h3>Comunicados</h3>
+                    <p>Emissão instantânea de despachos diretivos e deliberações da secretaria.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+ 
+    <!-- COMUNICADOS (antes no menu; agora secção própria) -->
+    <section class="section" id="comunicados" style="background:var(--gray);">
+        <div class="container">
+            <div class="section-heading center">
+                <p class="eyebrow">Fique a par</p>
+                <h2>Comunicados</h2>
+            </div>
+            <div class="notice-list">
+                {% for c in comunicados %}
+                <article class="notice-card">
+                    <div class="notice-meta">
+                        <time datetime="{{ c.data_iso }}" class="notice-date">📅 {{ c.data }}</time>
+                        <span class="badge badge-gold">Oficial</span>
+                    </div>
+                    <div class="notice-body">
+                        <h3>{{ c.titulo }}</h3>
+                        <p>{{ c.texto }}</p>
+                    </div>
+                </article>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <h4>Nenhum comunicado publicado no momento</h4>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+ 
+    <!-- MENSAGEM DO DIRETOR (antes no menu; agora secção própria) -->
+    <section class="section" id="quem-somos">
+        <div class="container">
+            <div class="split-layout">
+                <div class="media-block">
+                    <div class="image-premium-wrapper">
+                        <!-- Foto do Campus Dinâmica -->
+                        <img src="{{ url_for('static', filename='uploads/' + sobre.foto) }}" alt="Campus da ESGAM">
+                    </div>
+                </div>
+                <div class="text-block">
+                    <p class="eyebrow">{{ sobre.eyebrow }}</p>
+                    <h2>{{ sobre.titulo }}</h2>
+                    <p>{{ sobre.texto }}</p>
+                </div>
+            </div>
+        </div>
+    </section>
+ 
+    <section class="section" id="diretor">
+        <div class="container">
+            <div class="split-layout reverse">
+                <div class="text-block">
+                    <p class="eyebrow">Mensagem do Diretor</p>
+                    <h2>{{ diretor.titulo }}</h2>
+                    <p>{{ diretor.texto }}</p>
+                </div>
+                <div class="media-block">
+                    <div class="image-premium-wrapper">
+                        <!-- Foto do Diretor do Campus Dinâmica -->
+                        <img src="{{ url_for('static', filename='uploads/' + diretor.foto) }}" alt="Fotografia oficial do Diretor do Campus">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+ 
+</main>
+ 
+<footer class="site-footer">
+    <div class="container footer-grid">
+        <div class="footer-brand-column">
+            <div class="brand">
+                <img src="imagens/logo.png" alt="Logótipo">
+                <div><strong>ESG</strong><span>Alto Molócuè</span></div>
+            </div>
+        </div>
+        <div>
+            <h3>Links Rápidos</h3>
+            <ul>
+                <li><a class="footer-btn-link" href="#servicos">Serviços</a></li>
+                <li><a class="footer-btn-link" href="#comunicados">Comunicados</a></li>
+                <li><a class="footer-btn-link" href="#diretor">Mensagem do Diretor</a></li>
+                <li><a class="footer-btn-link" href="#quem-somos">Quem Somos</a></li>
+            </ul>
+        </div>
+        <div class="footer-contact-column">
+            <h3>Contacto Direto</h3>
+            <p>📧 {{ contacto.email }}</p>
+            <p>📞 {{ contacto.telefone }}</p>
+        </div>
+    </div>
+    <div class="container footer-bottom">
+        <p>© {{ ano_atual }} ESGAM. Todos os direitos reservados.</p>
+        <p>Desenvolvido por Cristiano Ferreira & Imerson Cigano.</p>
+    </div>
+</footer>
+ 
+<script src="index.js"></script>
+ 
+</body>
+</html>
+ 

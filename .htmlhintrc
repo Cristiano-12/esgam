@@ -1,0 +1,8 @@
+{
+ "spec-char-escape": false,
+ "id-class-value": "dash",
+ "tag-pair": true,
+ "attr-value-double-quotes": true,
+ "tagname-lowercase": true,
+ "attr-lowercase": true
+}

@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle</title>
+    <link rel="stylesheet" href="controle.css">
+    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="portal.css">
+</head>
+
+<body>
+
+    <header class="main-header">
+        <div class="header-logo-container">
+            <img src="imagens/logo.png" alt="Logo ESGAM" class="school-logo">
+        </div>
+
+        <div class="header-text">
+            <h1>ESGAM</h1>
+            <p>Gestão da direção</P>
+        </div>
+
+        <div class="header-menu">
+            <button type="button" id="menuBtn" aria-label="Menu">⋮</button>
+            <div id="dropdownMenu" class="dropdown-menu">
+                <button type="button" id="logoutBtn">Sair</button>
+            </div>
+        </div>
+    </header>
+    <main class="dashboard">
+
+        <div class="form-container" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+            <div class="top-grid">
+                <section class="card mini-card">
+                    <h3> Total de Alunos</h3>
+                    <div class="big-number">{{ total_alunos }}</div>
+                </section>
+
+                <section class="card mini-card">
+                    <h3>Classes Ativas</h3>
+                    <div class="big-number">{{ total_classes }}</div>
+                </section>
+
+                <section class="card mini-card">
+                    <h3>Grupos Ativos</h3>
+                    <div class="big-number">{{ total_grupos}}</div>
+                </section>
+
+                <section class="card mini-card">
+                    <h3>Trimestre Atual</h3>
+                    <div class="big-number text-highlight">{{ trimestre_atual}}</div>
+                </section>
+            </div>
+
+            <div class="admin-grid">
+
+                <section class="card">
+
+                    <h2>Carrossel Principal</h2>
+
+                    <p class="card-subtitle">
+                        O carrossel possui cinco posições. Selecione apenas as imagens que pretende substituir. Os campos deixados em branco permanecem inalterados.
+                    </p>
+
+                    {% with messages = get_flashed_messages(category_filter=["carrossel"]) %}
+                        {% if messages %}
+                            {% for mensagem in messages %}
+                                <div class="flash success">
+                                    <span>{{ mensagem }}</span>
+                                    <button type="button" class="flash-close">&times;</button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form action="/admin/carrossel" method="POST" enctype="multipart/form-data"
+                        onsubmit="return confirm('Pretende atualizar o carrossel principal?')">
+
+                        <div class="form-group">
+                            <label>Imagem 1</label>
+                            <input type="file" name="foto1" accept="image/*">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Imagem 2</label>
+                            <input type="file" name="foto2" accept="image/*">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Imagem 3</label>
+                            <input type="file" name="foto3" accept="image/*">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Imagem 4</label>
+                            <input type="file" name="foto4" accept="image/*">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Imagem 5</label>
+                            <input type="file" name="foto5" accept="image/*">
+                        </div>
+
+                        <button type="submit" class="btn-primary">
+                            Guardar Alterações
+                        </button>
+
+                    </form>
+
+                </section>
+
+                <section class="card">
+
+                    <h2>Banner Superior</h2>
+
+                    <p class="card-subtitle">
+                        Controla a mensagem apresentada acima do site.
+                    </p>
+
+                    {% with messages = get_flashed_messages(category_filter=["banner"]) %}
+                    {% if messages %}
+                    {% for mensagem in messages %}
+                    <div class="flash info">
+                        <span>{{ mensagem }}</span>
+                        <button class="flash-close">&times;</button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <form action="/admin/banner" method="POST">
+
+                        <div class="form-group">
+
+                            <label>Tipo</label>
+
+                            <select name="status">
+
+                                <option value="info" {% if banner.status=="info" %}selected{% endif %}>
+                                    Informação
+                                </option>
+
+                                <option value="alerta" {% if banner.status=="alerta" %}selected{% endif %}>
+                                    Alerta
+                                </option>
+
+                                <option value="erro" {% if banner.status=="erro" %}selected{% endif %}>
+                                    Erro
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label>Título</label>
+
+                            <input type="text" name="titulo" value="{{ banner.titulo }}" required>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label>Mensagem</label>
+
+                            <textarea rows="5" name="mensagem" required>{{ banner.mensagem }}
+                                </textarea>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label>Texto do botão</label>
+
+                            <input type="text" name="link_texto" value="{{ banner.link_texto }}">
+
+                        </div>
+
+                        <button class="btn-primary">
+
+                            Atualizar Banner
+
+                        </button>
+
+                    </form>
+
+                </section>
+
+                <section class="card">
+
+                    <h2>Sobre a Escola</h2>
+
+                    {% with messages = get_flashed_messages(category_filter=["sobre"]) %}
+                    {% if messages %}
+                    {% for mensagem in messages %}
+                    <div class="flash success">
+                        <span>{{ mensagem }}</span>
+                        <button class="flash-close">&times;</button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <form action="/admin/sobre" method="POST" enctype="multipart/form-data">
+
+                        <div class="form-group">
+
+                            <label>Texto</label>
+
+                            <textarea rows="7" name="texto">{{ sobre.texto }}
+                                </textarea>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label>Imagem da Escola</label>
+
+                            <input type="file" name="foto" accept="image/*">
+
+                        </div>
+
+                        <button class="btn-primary">
+
+                            Atualizar Informações
+
+                        </button>
+
+                    </form>
+
+                </section>
+
+                <section class="card">
+
+                    <h2>Mensagem do Diretor</h2>
+
+                    {% with messages = get_flashed_messages(category_filter=["diretor"]) %}
+                    {% if messages %}
+                    {% for mensagem in messages %}
+                    <div class="flash success">
+                        <span>{{ mensagem }}</span>
+                        <button class="flash-close">&times;</button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <form action="/admin/diretor" method="POST" enctype="multipart/form-data">
+
+                        <div class="form-group">
+
+                            <label>Título</label>
+
+                            <input type="text" name="titulo" value="{{ diretor.titulo }}">
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label>Mensagem</label>
+
+                            <textarea rows="8" name="texto">{{ diretor.texto }}
+                                </textarea>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label>Fotografia</label>
+
+                            <input type="file" name="foto" accept="image/*">
+
+                        </div>
+
+                        <button class="btn-primary">
+
+                            Atualizar Mensagem
+
+                        </button>
+
+                    </form>
+
+                </section>
+
+                <section class="card">
+
+                    <h2>Comunicados</h2>
+
+                    <p class="card-subtitle">
+                        Os comunicados publicados aparecem na página inicial.
+                    </p>
+
+                    {% with messages = get_flashed_messages(category_filter=["comunicado"]) %}
+                    {% if messages %}
+                    {% for mensagem in messages %}
+                    <div class="flash success">
+                        <span>{{ mensagem }}</span>
+                        <button class="flash-close">&times;</button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <form action="/admin/comunicado" method="POST">
+
+                        <div class="form-group">
+
+                            <label>Título</label>
+
+                            <input type="text" name="titulo" required>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label>Mensagem</label>
+
+                            <textarea rows="6" name="texto" required>
+                                </textarea>
+
+                        </div>
+
+                        <button class="btn-primary">
+
+                            Publicar Comunicado
+
+                        </button>
+
+                    </form>
+
+                </section>
+
+                <section class="card">
+
+                    <h2>Perguntas Frequentes</h2>
+
+                    <p class="card-subtitle">
+                        As três primeiras perguntas do site são permanentes. Apenas as duas perguntas adicionais podem
+                        ser alteradas.
+                    </p>
+
+                    {% with messages = get_flashed_messages(category_filter=["faq"]) %}
+                    {% if messages %}
+                    {% for mensagem in messages %}
+                    <div class="flash success">
+                        <span>{{ mensagem }}</span>
+                        <button type="button" class="flash-close">&times;</button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <div
+                        style="background:#f8fafc;padding:15px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:25px;">
+
+                        <strong>Perguntas Fixas</strong>
+
+                        <ul style="margin-top:10px;padding-left:20px;color:#475569;line-height:1.8;">
+                            <li>Como consultar as pautas do meu educando?</li>
+                            <li>Como faço a matrícula do meu educando?</li>
+                            <li>Como posso contactar a direção da escola?</li>
+                        </ul>
+
+                    </div>
+
+                    <form action="/admin/faq" method="POST">
+
+                        <div class="form-group">
+
+                            <label>Pergunta a editar</label>
+
+                            <select id="faqSelect" name="id" required>
+
+                                <option value="{{ faq1.id }}" data-pergunta="{{ faq1.pergunta }}"
+                                    data-resposta="{{ faq1.resposta }}">
+                                    Pergunta 1
+                                </option>
+
+                                <option value="{{ faq2.id }}" data-pergunta="{{ faq2.pergunta }}"
+                                    data-resposta="{{ faq2.resposta }}">
+                                    Pergunta 2
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label>Pergunta</label>
+
+                            <input id="faqPergunta" type="text" name="pergunta" value="{{ faq1.pergunta }}" required>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label>Resposta</label>
+
+                            <textarea id="faqResposta" name="resposta" rows="5" required>{{ faq1.resposta }}</textarea>
+
+                        </div>
+
+                        <button type="submit" class="btn-primary">
+                            Guardar Alterações
+                        </button>
+
+                    </form>
+
+                </section>
+
+                <section class="card">
+
+                    <h2>Estatísticas da Página Inicial</h2>
+
+                    {% with messages = get_flashed_messages(category_filter=["estatisticas"]) %}
+                    {% if messages %}
+                    {% for mensagem in messages %}
+                    <div class="flash success">
+                        <span>{{ mensagem }}</span>
+                        <button class="flash-close">&times;</button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <form action="/admin/estatisticas" method="POST">
+
+                        {% for stat in estatisticas %}
+
+                        <fieldset style="margin-bottom:25px;padding:15px;border:1px solid #e2e8f0;border-radius:8px;">
+
+                            <legend>Estatística {{ loop.index }}</legend>
+
+                            <input type="hidden" name="id" value="{{ stat.id }}">
+
+                            <div class="form-group">
+
+                                <label>Cod</label>
+
+                                <input type="text" name="label" value="{{ stat.cod }}"
+                                    placeholder="PROF | ALUNO | TAXA">
+
+                            </div>
+
+                            <div class="form-group">
+
+                                <label>Nome</label>
+
+                                <input type="text" name="label" value="{{ stat.label }}">
+
+                            </div>
+
+                            <div class="form-group">
+
+                                <label>Valor</label>
+
+                                <input type="number" name="valor" value="{{ stat.valor }}"
+                                    style="width: 100%; height: 38px;">
+
+                            </div>
+
+                            <div class="form-group">
+
+                                <label>Sufixo</label>
+
+                                <input type="text" name="sufixo" value="{{ stat.sufixo }}">
+
+                            </div>
+
+                        </fieldset>
+
+                        {% endfor %}
+
+                        <button class="btn-primary">
+
+                            Guardar Estatísticas
+
+                        </button>
+
+                    </form>
+
+                </section>
+
+                <section class="card">
+
+                    <h2>Contactos</h2>
+
+                    {% with messages = get_flashed_messages(category_filter=["contacto"]) %}
+                    {% if messages %}
+                    {% for mensagem in messages %}
+                    <div class="flash success">
+                        <span>{{ mensagem }}</span>
+                        <button class="flash-close">&times;</button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <form action="/admin/contacto" method="POST">
+
+                        <div class="form-group">
+
+                            <label>Email</label>
+
+                            <input type="email" name="email" value="{{ contacto.email }}"
+                                style="width: 100%; height: 38px;">
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label>Telefone</label>
+
+                            <input type="text" name="telefone" value="{{ contacto.telefone }}">
+
+                        </div>
+
+                        <button class="btn-primary">
+
+                            Atualizar Contactos
+
+                        </button>
+
+                    </form>
+
+                </section>
+
+                <section class="card">
+
+                    <h2>Rodapé</h2>
+
+                    {% with messages = get_flashed_messages(category_filter=["rodape"]) %}
+                    {% if messages %}
+                    {% for mensagem in messages %}
+                    <div class="flash success">
+                        <span>{{ mensagem }}</span>
+                        <button class="flash-close">&times;</button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <form action="/admin/rodape" method="POST">
+
+                        <div class="form-group">
+
+                            <label>Ano</label>
+
+                            <input type="number" name="ano" value="{{ ano_atual }}" style="width: 100%; height: 38px;">
+
+                        </div>
+
+                        <button class="btn-primary">
+
+                            Atualizar Rodapé
+
+                        </button>
+
+                    </form>
+
+                </section>
+
+                <section class="card">
+
+                    <h2>Estado do Site</h2>
+
+                    <p class="card-subtitle">
+
+                        Informação apenas para consulta.
+                        O controlo é feito na Central de Verificação.
+
+                    </p>
+
+                    <div class="student-vertical-info"
+                        style="background:#f8fafc;padding:18px;border-radius:8px;border:1px solid #e2e8f0;line-height:2;">
+
+                        <p>
+
+                            <strong>Portal do Estudante:</strong>
+
+                            {% if portal_notas_aberto %}
+
+                            🟢 Aberto
+
+                            {% else %}
+
+                            🔴 Fechado
+
+                            {% endif %}
+
+                        </p>
+
+                        <p>
+
+                            <strong>Consulta Pública:</strong>
+
+                            {% if portal_pauta_aberto %}
+
+                            🟢 Aberta
+
+                            {% else %}
+
+                            🔴 Fechada
+
+                            {% endif %}
+
+                        </p>
+
+                        <p>
+
+                            <strong>Banner:</strong>
+
+                            {{ banner.status|capitalize }}
+
+                        </p>
+
+                        <p>
+
+                            <strong>Total de Fotos:</strong>
+
+                            {{ fotos_carrossel|length }}/5
+
+                        </p>
+
+                        <p>
+
+                            <strong>FAQs Dinâmicas:</strong>
+
+                            {{ faq_dinamico|length }}
+
+                        </p>
+
+                    </div>
+
+                </section>
+
+                <section class="card">
+                    <h2>Publicação de Notas</h2>
+                    {% with messages = get_flashed_messages(category_filter=["pauta"]) %}
+                    {% if messages %}
+                    {% for mensagem in messages %}
+                    <div class="flash success">
+                        <span>{{ mensagem }}</span>
+                        <button type="button" class="flash-close">&times;</button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+                    <form action="/admin/upload-pauta" method="POST" enctype="multipart/form-data"
+                        onsubmit="return confirm('Tens certeza que queres publicar este(s) ficheiro(s) de turmas?')">
+
+                        <input type="hidden" name="tipo_pauta" value="notas">
+
+                        <div class="form-group">
+                            <label for="arquivoNotas">Ficheiros Excel</label>
+                            <input type="file" id="arquivoNotas" name="arquivo_pauta" accept=".xlsx,.xls" multiple required>
+                        </div>
+
+                        <button type="submit" class="btn-primary" {% if not portal_notas_aberto %}disabled{% endif %}>
+                            Publicar Pauta de Notas
+                        </button>
+
+                    </form>
+
+                    <hr style="margin: 30px 0; border: none; border-top: 1px solid #e2e8f0;">
+
+                    <h2>Publicação de Pautas</h2>
+
+                    <form action="/admin/upload-pauta" method="POST" enctype="multipart/form-data"
+                        onsubmit="return confirm('Tens certeza que queres publicar este(s) ficheiro(s) de turmas?')">
+
+                        <input type="hidden" name="tipo_pauta" value="turmas">
+
+                        <div class="form-group">
+                            <label for="arquivoTurmas">Ficheiros Excel</label>
+                            <input type="file" id="arquivoTurmas" name="arquivo_pauta" accept=".xlsx,.xls" multiple
+                                required>
+                        </div>
+
+                        <button type="submit" class="btn-primary" {% if not portal_pauta_aberto %}disabled{% endif %}>
+                            Publicar Pauta de Turmas
+                        </button>
+
+                    </form>
+
+                </section>
+
+                <section class="card">
+                    <h2>Publicar Aviso</h2>
+
+                    {% with messages = get_flashed_messages(category_filter=["aviso"]) %}
+                    {% if messages %}
+                    {% for mensagem in messages %}
+                    <div class="flash info">
+                        <span>{{ mensagem }}</span>
+                        <button type="button" class="flash-close">&times;</button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <form action="/admin/publicar-aviso" method="POST">
+
+                        <div class="form-group">
+                            <label for="destinoAviso">Destino</label>
+                            <input type="text" id="destinoAviso" name="destino"
+                                placeholder="Ex.: TODOS| 10 | 10A | 10/A | 10A/C | ID " required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="msgAviso">Mensagem</label>
+                            <textarea id="msgAviso" name="mensagem" placeholder="Digite o aviso..." required>
+                                    </textarea>
+                        </div>
+
+                        <button type="submit" class="btn-primary">
+                            Publicar Aviso
+                        </button>
+
+                    </form>
+                </section>
+
+                <section class="card">
+                    <h2>Gestão de Grupos</h2>
+
+                    {% with messages = get_flashed_messages(category_filter=["grupo"]) %}
+                    {% if messages %}
+                    {% for mensagem in messages %}
+                    <div class="flash success">
+                        <span>{{ mensagem }}</span>
+                        <button type="button" class="flash-close">&times;</button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <form action="/admin/grupos" method="POST">
+
+                        <div class="form-group">
+                            <label for="classeGrupo">Classe</label>
+                            <select id="classeGrupo" name="classe" required>
+                                <option value="">Selecionar</option>
+                                <option value="10">10ª Classe</option>
+                                <option value="11">11ª Classe</option>
+                                <option value="12">12ª Classe</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="turmaGrupo">Turma</label>
+                            <input type="text" id="turmaGrupo" name="turma" placeholder="Ex.: A" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="grupo">Grupo</label>
+                            <input type="text" id="grupo" name="grupo" placeholder="Ex.: A" required>
+                        </div>
+
+                        <div class="action-buttons-row">
+                            <button type="submit" name="acao" value="criar" class="btn-primary">
+                                Criar
+                            </button>
+                        </div>
+
+                    </form>
+                </section>
+
+                <section class="card">
+                    <h2>Gestão de Alunos</h2>
+
+                    <div class="vertical-actions">
+
+                        <a href="/visao_geral.html" class="btn btn-primary">
+                            Visão Geral
+                        </a>
+
+                        <a href="/registar.html" class="btn btn-primary">
+                            Novo Aluno
+                        </a>
+
+
+                        <a href="/gestao.html" class="btn btn-secondary">
+                            Editar Aluno
+                        </a>
+
+                    </div>
+
+                </section>
+
+                <section class="card">
+                    <h2>Operações em Massa</h2>
+
+                    {% with messages = get_flashed_messages(category_filter=["eliminar"]) %}
+                    {% if messages %}
+                    {% for mensagem in messages %}
+                    <div class="flash warning">
+                        <span>{{ mensagem }}</span>
+                        <button type="button" class="flash-close">&times;</button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <p class="card-subtitle">
+                        Elimine classes, grupos ou turmas usando um único campo. Os dados vão para a
+                        lixeira e podem ser restaurados durante 10 dias.
+                    </p>
+
+                    <form action="/admin/eliminar" method="POST"
+                        onsubmit="return confirm('Tens certeza que queres eliminar os registos selecionados?')">
+                        <div class="form-group">
+                            <label for="eliminarValor">Eliminar</label>
+                            <input type="text" id="eliminarValor" name="eliminar"
+                                placeholder="Ex.TODOS| 10 | 10A | 10/A | 10A/C | ID " required>
+
+                        </div>
+
+                        <button type="submit" class="btn-danger" style="margin-top: 20px;">
+                            Eliminar
+                        </button>
+                    </form>
+
+                </section>
+
+                <section class="card">
+                    <h2>Lixeira Temporária</h2>
+
+                    <p class="card-subtitle">
+                        Consulte, pesquise e restaure registos eliminados temporariamente.
+                    </p>
+
+                    <div class="vertical-actions">
+                        <a href="/lixeira.html" class="btn btn-secondary">
+                            Ver Lixeira
+                        </a>
+                    </div>
+                </section>
+            </div>
+
+        </div>
+
+        <footer class="main-footer">
+            <p>
+                &copy; Escola Secundária Geral de Alto Molócuè. Todos os direitos reservados.
+            </p>
+        </footer>
+
+    </main>
+
+</body>
+
+</html>
