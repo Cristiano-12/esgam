@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
     const studentIDInput = document.getElementById('studentID');
     const passwordInput = document.getElementById('password');
-    const togglePasswordBtn = document.getElementById('togglePassword');
+    const togglePasswordBtn = document.getElementById('toggle-password');
     const eyeIcon = document.getElementById('eyeIcon');
 
     const eyeOpenSVG = `

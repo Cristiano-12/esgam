@@ -75,6 +75,17 @@
     color: #334155;
 }
 
+select {
+    appearance: none;
+}
+
+input,
+textarea,
+select {
+    font-family: inherit;
+}
+
+
 .form-group input[type="text"],
 .form-group input[type="file"],
 .form-group select,
@@ -124,14 +135,13 @@
     padding-top: 8px;
 }
 
-.vertical-actions .btn {
+.btn .vertical-actions {
     display: block;
     text-decoration: none;
     color: #fff;
 }
 
-button,
-.btn {
+button, .btn {
     font-family: inherit;
     font-size: 0.95rem;
     font-weight: 600;
@@ -166,39 +176,39 @@ button:active {
     background-color: #475569;
 }
 
-    .btn-success {
-        background-color: #16a34a;
-        color: #fff;
-    }
+.btn-success {
+    background-color: #16a34a;
+    color: #fff;
+}
 
-    .btn-success:hover {
-        background-color: #15803d;
-    }
+.btn-success:hover {
+    background-color: #15803d;
+}
 
-    .btn-small {
-        padding: 6px 10px;
-        font-size: 0.82rem;
-        border-radius: 6px;
-    }
+.btn-small {
+    padding: 6px 10px;
+    font-size: 0.82rem;
+    border-radius: 6px;
+}
 
-    .status-warning {
-        color: #b45309;
-    }
+.status-warning {
+    color: #b45309;
+}
 
-    .status-danger {
-        color: #b91c1c;
-    }
+.status-danger {
+    color: #b91c1c;
+}
 
-    .details-row {
-        background-color: #f8fafc;
-    }
+.details-row {
+    background-color: #f8fafc;
+}
 
 
 .btn-danger:hover {
     background-color: #b91c1c;
 }
 
-@media ( max-width: 768px) {
+@media (width <= 768px) {
     .dashboard {
         padding: 15px 10px;
     }
@@ -257,21 +267,6 @@ button:disabled,
     color: #64748b;
     cursor: not-allowed;
     opacity: .7;
-}
-
-button:not(:disabled):hover,
-.btn:not(:disabled):hover {
-    transform: translateY(-1px);
-}
-
-select {
-    appearance: none;
-}
-
-input,
-select,
-textarea {
-    font-family: inherit;
 }
 
 .flash {
@@ -346,7 +341,7 @@ textarea {
     transform: scale(0.96);
 }
 
-@keyframes flashShow {
+@keyframes flash-show {
     from {
         opacity: 0;
         transform: translateY(-8px);

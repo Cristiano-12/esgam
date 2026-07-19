@@ -1,15 +1,17 @@
-
 /* ===================================
    RESET GLOBAL (Trava a página no mobile)
 =================================== */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
     box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
     width: 100%;
     max-width: 100%;
-    margin: 0; 
+    margin: 0;
     padding: 0;
     overflow-x: hidden;
     background-color: #f8fafc;
@@ -128,7 +130,7 @@ html, body {
 .dashboard {
     width: 100%;
     max-width: 1400px;
-    margin:0 auto;
+    margin: 0 auto;
     padding: 20px;
     box-sizing: border-box;
 }
@@ -176,7 +178,6 @@ html, body {
     font-size: 0.95rem;
     color: #475569;
     overflow-wrap: break-word;
-    word-break: break-word;
 }
 
 .student-vertical-info strong {
@@ -195,7 +196,7 @@ html, body {
 =================================== */
 .final-average-box {
     border-left: 6px solid #4c1d95;
-    display:flex;
+    display: flex;
     flex-direction: column;
     justify-content: center;
     width: 100%;
@@ -218,7 +219,7 @@ html, body {
 
 .table-container {
     width: 100%;
-    max-width: 100%; 
+    max-width: 100%;
     display: block;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -229,10 +230,10 @@ html, body {
 }
 
 table {
-    min-width: 900px; 
+    min-width: 900px;
     width: max-content;
     border-collapse: collapse;
-    
+
 }
 
 th {
@@ -247,7 +248,7 @@ th {
 }
 
 .trimestre-sep {
-    border-left: 2px solid #475569 !important; 
+    border-left: 2px solid #475569 !important;
 }
 
 td {
@@ -281,12 +282,14 @@ td {
     color: #1e1b4b;
 }
 
-tr:focus-within, tr:hover {
+tr:focus-within,
+tr:hover {
     background-color: #f8fafc;
     outline: none;
 }
 
-tr:focus-within td, tr:hover td {
+tr:focus-within td,
+tr:hover td {
     color: #000;
     background-color: #f1f5f9;
 }
@@ -319,10 +322,17 @@ tr:focus-within td, tr:hover td {
 /* ===================================
   ANIMACOES E RESPONSIVIDADE
 =================================== */
-@keyframes fadeInDropdown {
-    from { opacity: 0; transform: translateY(-5px);}
-    to { opacity: 1; transform: translateY(0);}
+@keyframes fade-in-dropdown {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
     }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
 
 @media (width <= 768px) {
     .main-header {
@@ -344,7 +354,7 @@ tr:focus-within td, tr:hover td {
 
     .top-grid {
         display: grid;
-        grid-template-columns:1fr;
+        grid-template-columns: 1fr;
         gap: 25px;
         width: 100%;
         max-width: 100%;
@@ -362,16 +372,9 @@ tr:focus-within td, tr:hover td {
 
 .nota-reprovado {
     color: #dc2626 !important;
-}   
+}
 
-image{
+
+image {
     max-width: 100%;
-}
-
-table{
-    max-width: none;
-}
-
-.card{
-    overflow: hidden;
 }
