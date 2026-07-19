@@ -1,4 +1,3 @@
-/* ESGAM — folha de estilos mobile-first */
 :root {
   --primary: #2f6fa5;
   --primary-dark: #1c4568;
@@ -825,7 +824,7 @@ p {
   animation: heroIn .9s var(--ease-out) .45s forwards;
 }
 
-@keyframes hero-in {
+@keyframes heroIn {
   to {
     opacity: 1;
     transform: translateY(0);
@@ -927,7 +926,7 @@ p {
   animation: fillProgress 3.5s linear forwards;
 }
 
-@keyframes fill-progress {
+@keyframes fillProgress {
   from {
     transform: scaleX(0);
   }
