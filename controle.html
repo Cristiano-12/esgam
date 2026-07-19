@@ -19,13 +19,13 @@
 
         <div class="header-text">
             <h1>ESGAM</h1>
-            <p>Gestão da direção</P>
+            <p>Gestão da direção</p>
         </div>
 
         <div class="header-menu">
-            <button type="button" id="menuBtn" aria-label="Menu">⋮</button>
-            <div id="dropdownMenu" class="dropdown-menu">
-                <button type="button" id="logoutBtn">Sair</button>
+            <button type="button" id="menu-btn">⋮</button>
+            <div id="dropdown-menu" class="dropdown-menu">
+                <button type="button" id="logout-btn">Sair</button>
             </div>
         </div>
     </header>
@@ -290,49 +290,52 @@
                     <h2>Comunicados</h2>
 
                     <p class="card-subtitle">
-                        Os comunicados publicados aparecem na página inicial.
+                        Publique um comunicado. O sistema mantém automaticamente apenas os três comunicados mais recentes.
+                        Cada novo comunicado passa para a 1.ª posição, deslocando os restantes para baixo.
                     </p>
 
                     {% with messages = get_flashed_messages(category_filter=["comunicado"]) %}
-                    {% if messages %}
-                    {% for mensagem in messages %}
-                    <div class="flash success">
-                        <span>{{ mensagem }}</span>
-                        <button class="flash-close">&times;</button>
-                    </div>
-                    {% endfor %}
-                    {% endif %}
+                        {% if messages %}
+                            {% for mensagem in messages %}
+                            <div class="flash success">
+                                <span>{{ mensagem }}</span>
+                                <button type="button" class="flash-close">&times;</button>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
                     {% endwith %}
 
                     <form action="/admin/comunicado" method="POST">
 
                         <div class="form-group">
-
                             <label>Título</label>
-
-                            <input type="text" name="titulo" required>
-
+                            <input
+                                type="text"
+                                name="titulo"
+                                maxlength="120"
+                                placeholder="Título do comunicado"
+                                required
+                            >
                         </div>
 
                         <div class="form-group">
-
                             <label>Mensagem</label>
-
-                            <textarea rows="6" name="texto" required>
-                                </textarea>
-
+                            <textarea
+                                name="texto"
+                                rows="6"
+                                placeholder="Escreva o comunicado..."
+                                required>
+                            </textarea>
                         </div>
 
-                        <button class="btn-primary">
-
+                        <button type="submit" class="btn-primary">
                             Publicar Comunicado
-
                         </button>
 
                     </form>
 
                 </section>
-
+                
                 <section class="card">
 
                     <h2>Perguntas Frequentes</h2>
@@ -372,7 +375,7 @@
 
                             <label>Pergunta a editar</label>
 
-                            <select id="faqSelect" name="id" required>
+                            <select id="faq-select" name="id" required>
 
                                 <option value="{{ faq1.id }}" data-pergunta="{{ faq1.pergunta }}"
                                     data-resposta="{{ faq1.resposta }}">
@@ -392,7 +395,7 @@
 
                             <label>Pergunta</label>
 
-                            <input id="faqPergunta" type="text" name="pergunta" value="{{ faq1.pergunta }}" required>
+                            <input id="faq-pergunta" type="text" name="pergunta" value="{{ faq1.pergunta }}" required>
 
                         </div>
 
@@ -400,7 +403,7 @@
 
                             <label>Resposta</label>
 
-                            <textarea id="faqResposta" name="resposta" rows="5" required>{{ faq1.resposta }}</textarea>
+                            <textarea id="faq-resposta" name="resposta" rows="5" required>{{ faq1.resposta }}</textarea>
 
                         </div>
 
@@ -657,7 +660,7 @@
 
                         <div class="form-group">
                             <label for="arquivoNotas">Ficheiros Excel</label>
-                            <input type="file" id="arquivoNotas" name="arquivo_pauta" accept=".xlsx,.xls" multiple required>
+                            <input type="file" id="arquivo-notas" name="arquivo_pauta" accept=".xlsx,.xls" multiple required>
                         </div>
 
                         <button type="submit" class="btn-primary" {% if not portal_notas_aberto %}disabled{% endif %}>
@@ -677,7 +680,7 @@
 
                         <div class="form-group">
                             <label for="arquivoTurmas">Ficheiros Excel</label>
-                            <input type="file" id="arquivoTurmas" name="arquivo_pauta" accept=".xlsx,.xls" multiple
+                            <input type="file" id="arquivo-turmas" name="arquivo_pauta" accept=".xlsx,.xls" multiple
                                 required>
                         </div>
 
@@ -707,13 +710,13 @@
 
                         <div class="form-group">
                             <label for="destinoAviso">Destino</label>
-                            <input type="text" id="destinoAviso" name="destino"
+                            <input type="text" id="destino-aviso" name="destino"
                                 placeholder="Ex.: TODOS| 10 | 10A | 10/A | 10A/C | ID " required>
                         </div>
 
                         <div class="form-group">
                             <label for="msgAviso">Mensagem</label>
-                            <textarea id="msgAviso" name="mensagem" placeholder="Digite o aviso..." required>
+                            <textarea id="msg-aviso" name="mensagem" placeholder="Digite o aviso..." required>
                                     </textarea>
                         </div>
 
@@ -742,7 +745,7 @@
 
                         <div class="form-group">
                             <label for="classeGrupo">Classe</label>
-                            <select id="classeGrupo" name="classe" required>
+                            <select id="classe-grupo" name="classe" required>
                                 <option value="">Selecionar</option>
                                 <option value="10">10ª Classe</option>
                                 <option value="11">11ª Classe</option>
@@ -752,7 +755,7 @@
 
                         <div class="form-group">
                             <label for="turmaGrupo">Turma</label>
-                            <input type="text" id="turmaGrupo" name="turma" placeholder="Ex.: A" required>
+                            <input type="text" id="turma-grupo" name="turma" placeholder="Ex.: A" required>
                         </div>
 
                         <div class="form-group">
@@ -814,7 +817,7 @@
                         onsubmit="return confirm('Tens certeza que queres eliminar os registos selecionados?')">
                         <div class="form-group">
                             <label for="eliminarValor">Eliminar</label>
-                            <input type="text" id="eliminarValor" name="eliminar"
+                            <input type="text" id="eliminar-valor" name="eliminar"
                                 placeholder="Ex.TODOS| 10 | 10A | 10/A | 10A/C | ID " required>
 
                         </div>
@@ -839,7 +842,243 @@
                         </a>
                     </div>
                 </section>
+
             </div>
+
+            <section class="card">
+
+                <h2>Validação Inteligente</h2>
+
+                <p class="card-subtitle">
+                    O sistema valida automaticamente todos os ficheiros recebidos e importa apenas os que não apresentam conflitos. Apenas as situações que exigem intervenção da direção são apresentadas abaixo.
+                </p>
+
+                <div class="top-grid">
+
+                    <div class="mini-card">
+                        <div class="big-number text-highlight">
+                            {{ excel_recebidos }}
+                        </div>
+
+                        <span>Excel recebidos</span>
+                    </div>
+
+                    <div class="mini-card">
+                        <div class="big-number" style="color:#16a34a;">
+                            {{ excel_importados }}
+                        </div>
+
+                        <span>Importados automaticamente</span>
+                    </div>
+
+                    <div class="mini-card">
+                        <div class="big-number status-warning">
+                            {{ pendencias|length }}
+                        </div>
+
+                        <span>Pendências</span>
+                    </div>
+
+                </div>
+
+                {% if pendencias %}
+
+                    <h3 style="margin-top:30px;">
+                        Pendências que necessitam de confirmação
+                    </h3>
+
+                    {% for erro in pendencias %}
+
+                    <div style="margin-top:20px;padding:22px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;">
+
+                        <h3 style="margin-bottom:10px;">
+                            {{ erro.nome_ficheiro }}
+                        </h3>
+
+                        <p style="margin-bottom:18px;color:#64748b;">
+
+                            <strong>Classe:</strong> {{ erro.classe }}
+
+                            &nbsp;|&nbsp;
+
+                            <strong>Turma:</strong> {{ erro.turma }}
+
+                            &nbsp;|&nbsp;
+
+                            <strong>Grupo:</strong> {{ erro.grupo }}
+
+                            {% if erro.periodo %}
+
+                            &nbsp;|&nbsp;
+
+                            <strong>Período:</strong> {{ erro.periodo }}
+
+                            {% endif %}
+
+                        </p>
+
+                        <div class="flash warning">
+
+                            <span>
+
+                                {{ erro.descricao }}
+
+                            </span>
+
+                        </div>
+
+                        {% if erro.tipo == "duplicado" %}
+
+                        <div style="margin-top:15px;">
+
+                            <p>
+
+                                Já existe uma pauta publicada para esta turma.
+                                Confirme se pretende substituir a versão atualmente armazenada.
+
+                            </p>
+
+                        </div>
+
+                        <div class="action-buttons-row">
+
+                            <form action="/admin/substituir-pauta" method="POST">
+
+                                <input type="hidden" name="id" value="{{ erro.id }}">
+
+                                <button class="btn-primary">
+
+                                    Substituir pauta
+
+                                </button>
+
+                            </form>
+
+                            <form action="/admin/ignorar-pauta" method="POST">
+
+                                <input type="hidden" name="id" value="{{ erro.id }}">
+
+                                <button class="btn-secondary">
+
+                                    Manter a atual
+
+                                </button>
+
+                            </form>
+
+                        </div>
+
+                        {% endif %}
+
+
+                        {% if erro.tipo == "nome" %}
+
+                        <div style="margin-top:18px;">
+
+                            <p>
+
+                                O sistema encontrou um aluno com nome semelhante, mas não conseguiu confirmar a identidade com segurança.
+
+                            </p>
+
+                        </div>
+
+                        <form action="/admin/confirmar-aluno" method="POST">
+
+                            <input type="hidden" name="id" value="{{ erro.id }}">
+
+                            {% if erro.nome_excel %}
+
+                            <div style="margin-bottom:12px;">
+
+                                <strong>Nome recebido:</strong>
+
+                                {{ erro.nome_excel }}
+
+                            </div>
+
+                            {% endif %}
+
+                            {% if erro.nome_banco %}
+
+                            <div style="margin-bottom:18px;">
+
+                                <strong>Nome encontrado:</strong>
+
+                                {{ erro.nome_banco }}
+
+                            </div>
+
+                            {% endif %}
+
+                            <div class="form-group">
+
+                                <label>ID correto do aluno</label>
+
+                                <input
+                                    type="text"
+                                    name="id_aluno"
+                                    placeholder="Introduza o ID do aluno"
+                                    required>
+
+                            </div>
+
+                            <button class="btn-primary">
+
+                                Confirmar aluno
+
+                            </button>
+
+                        </form>
+
+                        {% endif %}
+
+
+                        {% if erro.tipo == "novo" %}
+
+                        <div style="margin-top:18px;">
+
+                            <p>
+
+                                Este aluno não existe na base de dados da escola.
+
+                            </p>
+
+                        </div>
+
+                        <form action="/admin/adicionar-aluno" method="POST">
+
+                            <input type="hidden" name="id" value="{{ erro.id }}">
+
+                            <button class="btn-success">
+
+                                Adicionar aluno ao banco de dados
+
+                            </button>
+
+                        </form>
+
+                        {% endif %}
+
+                    </div>
+
+                    {% endfor %}
+
+                {% else %}
+
+                <div class="flash success">
+
+                    <span>
+
+                        Todas as pautas foram validadas, importadas e verificadas com sucesso. Não existem pendências.
+
+                    </span>
+
+                </div>
+
+                {% endif %}
+
+            </section>
 
         </div>
 

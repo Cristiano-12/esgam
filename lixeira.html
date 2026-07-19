@@ -40,10 +40,10 @@
 
             <section class="card" style="margin-bottom: 25px;">
                 <h3>Pesquisar na Lixeira</h3>
-                <form id="filtroLixeira" action="/admin/lixeira" method="GET" class="admin-form" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                <form id="filtro-lixeira" action="/admin/lixeira" method="GET" class="admin-form" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
                     <div class="form-group" style="flex:1; min-width:280px; margin-bottom:0;">
                         <label for="pesquisaLixeira">🔍 Procurar</label>
-                        <input type="text" id="pesquisaLixeira" name="pesquisa" placeholder="EX.: ESG123456 | 10A | 10/C | 10C/A" style="width:100%;">
+                        <input type="text" id="pesquisa-lixeira" name="pesquisa" placeholder="EX.: ESG123456 | 10A | 10/C | 10C/A" style="width:100%;">
                     </div>
                     <div class="form-group" style="min-width:180px; margin-bottom:0;">
                         <label for="categoriaLixeira">Pesquisar por</label>
@@ -55,9 +55,9 @@
                             <option value="classes">Classes</option>
                         </select>
                     </div>
-                    <button type="submit" id="btnPesquisar" class="btn-primary btn-small" style="align-self:flex-end; margin-left:8px;">Pesquisar</button>
+                    <button type="submit" id="btn-pesquisar" class="btn-primary btn-small" style="align-self:flex-end; margin-left:8px;">Pesquisar</button>
                 </form>
-                <div id="lixeiraVaziaAviso" style="display:none; margin-top: 18px; padding: 14px 16px; border-radius: 12px; background: #f8fafc; color: #334155; border: 1px solid #cbd5e1;">
+                <div id="lixeira-vazia-aviso" style="display:none; margin-top: 18px; padding: 14px 16px; border-radius: 12px; background: #f8fafc; color: #334155; border: 1px solid #cbd5e1;">
                     🗑️ A lixeira está vazia. Não existem registos eliminados.
                 </div>
             </section>
@@ -80,7 +80,7 @@
             <section class="card" style="margin-bottom: 25px;">
                 <h2>Classes Eliminadas</h2>
                 <div class="table-container">
-                    <table id="classesTabela" style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <table id="classes-tabela" style="width: 100%; border-collapse: collapse; text-align: left;">
                         <thead>
                             <tr style="border-bottom: 2px solid #cbd5e1; background-color: #f8fafc;">
                                 <th style="padding: 10px 8px;">Classe</th>
@@ -126,7 +126,7 @@
             <section class="card" style="margin-bottom: 25px;">
                 <h2>Grupos Eliminados</h2>
                 <div class="table-container">
-                    <table id="gruposTabela" style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <table id="grupos-tabela" style="width: 100%; border-collapse: collapse; text-align: left;">
                         <thead>
                             <tr style="border-bottom: 2px solid #cbd5e1; background-color: #f8fafc;">
                                 <th style="padding: 10px 8px;">Classe</th>
@@ -172,7 +172,7 @@
             <section class="card" style="margin-bottom: 25px;">
                 <h2>Turmas Eliminadas</h2>
                 <div class="table-container">
-                    <table id="turmasTabela" style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <table id="turmas-tabela" style="width: 100%; border-collapse: collapse; text-align: left;">
                         <thead>
                             <tr style="border-bottom: 2px solid #cbd5e1; background-color: #f8fafc;">
                                 <th style="padding: 10px 8px;">Classe</th>
@@ -236,7 +236,7 @@
                 <h2>Alunos Eliminados</h2>
 
                 <div class="table-container">
-                    <table id="alunosTabela" style="width:100%; border-collapse:collapse; text-align:left;">
+                    <table id="alunos-tabela" style="width:100%; border-collapse:collapse; text-align:left;">
 
                         <thead>
                             <tr style="border-bottom:2px solid #cbd5e1; background:#f8fafc;">

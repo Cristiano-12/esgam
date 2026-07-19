@@ -21,9 +21,9 @@
     </div>
 
     <div class="header-menu">
-        <button type="button" id="menuBtn" aria-label="Menu">⋮</button>
-        <div id="dropdownMenu" class="dropdown-menu">
-            <button type="button" id="logoutBtn">Sair</button>
+        <button type="button" id="menu-btn"">⋮</button>
+        <div id="dropdown-menu" class="dropdown-menu">
+            <button type="button" id="logout-btn">Sair</button>
         </div>
     </div>
     </header>
@@ -101,7 +101,7 @@
                         </tr>
                     </thead>
                     
-                    <tbody id="gradesTable">
+                    <tbody id="grades-table">
                         {% if pauta_disciplinas %}
                             {% for linha in pauta_disciplinas %}
                             <tr>
