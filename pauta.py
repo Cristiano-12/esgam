@@ -46,9 +46,6 @@ def carregar_dados_turmas(numero_classe):
 def consulta_turmas():
     classe = request.args.get("classe", type=int)
 
-    if Turma.query.filter_by(deleted_at=None).count() == 0:
-        abort(400)
-
     dados_estrutura = {}
 
     if classe:

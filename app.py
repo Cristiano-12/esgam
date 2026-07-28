@@ -59,11 +59,6 @@ def erro_servidor(e):
     """Trata erros internos imprevistos do servidor."""
     return render_template("404.html"), 500
 
-@app.errorhandler(400)
-def servico_indisponivel(e):
-    """Trata a indisponibilidade da consulta de turmas."""
-    return render_template("400.html"), 400
-
 # -------------------------------------------------------------------
 # Base de Dados
 # -------------------------------------------------------------------
