@@ -9,9 +9,14 @@ from models import db
 app = Flask(__name__)
 
 # Configurações do Flask
-# Em desenvolvimento usa a chave fixa; em produção podes definir a variável de ambiente SECRET_KEY
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "ESGAM_2026_CHAVE_INTERNA")
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///esgam.db"
+
+# No Vercel, o SQLite só funciona dentro da pasta /tmp
+if os.environ.get("VERCEL"):
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:////tmp/esgam.db"
+else:
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///esgam.db"
+
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Inicializar SQLAlchemy com o App
@@ -20,7 +25,6 @@ db.init_app(app)
 # -------------------------------------------------------------------
 # Importação e Registo de Blueprints
 # -------------------------------------------------------------------
-
 from index import index_bp
 from login import login_bp
 from portal import portal_bp
@@ -58,21 +62,15 @@ def erro_servidor(e):
 @app.errorhandler(400)
 def servico_indisponivel(e):
     """Trata a indisponibilidade da consulta de turmas."""
-    return render_template("404.html"), 400
+    return render_template("400.html"), 400
 
 # -------------------------------------------------------------------
-# Base de Dados e Execução
+# Base de Dados
 # -------------------------------------------------------------------
-
-# Importamos os modelos para que o SQLAlchemy registe todas as tabelas em memória
 import models
-
-print("Vou criar a base de dados...")
 
 with app.app_context():
     db.create_all()
-
-print("Base de dados criada!")
 
 if __name__ == "__main__":
     app.run(debug=True)
