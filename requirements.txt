@@ -9,4 +9,3 @@ WTForms
 email-validator
 requests
 python-dotenv
-pandas
