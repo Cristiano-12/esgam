@@ -11,7 +11,7 @@ def login_required(f):
     def decorated_function(*args, **kwargs):
         if 'admin_logged_in' not in session:
             flash('Por favor, efetue login para aceder a esta página.', 'erro')
-            return redirect(url_for('auth.login'))
+            return redirect(url_for('login.login'))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -78,7 +78,7 @@ def central_verificacao():
     avisos_individuais = Banner.query.filter_by(status='urgente', ativo=True).all()
 
     return render_template(
-        'central.html',
+        'visao_geral.html',
         total_aluno=total_aluno,
         total_classes=total_classes,
         total_turmas=total_turmas,

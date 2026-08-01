@@ -16,7 +16,7 @@ def login_required(f):
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json:
                 return jsonify({'sucesso': False, 'mensagem': 'Sessao expirada. Faca login novamente.'}), 401
             flash('Por favor, efetue login para aceder a esta pagina.', 'erro')
-            return redirect(url_for('auth.login'))
+            return redirect(url_for('login.login'))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -49,7 +49,7 @@ def pagina_registar_aluno():
     turmas = Turma.query.filter_by(deleted_at=None).all()
     
     return render_template(
-        'registar_aluno.html', 
+        'registar.html', 
         classes=classes, 
         grupos=grupos, 
         turmas=turmas

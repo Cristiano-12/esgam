@@ -99,7 +99,7 @@ def index():
     total_classes_lixeira = len(classes_eliminadas)
 
     return render_template(
-        'admin/lixeira.html',
+        'lixeira.html',
         classes_eliminadas=classes_eliminadas,
         grupos_eliminados=grupos_eliminados,
         turmas_eliminadas=turmas_eliminadas,

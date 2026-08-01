@@ -2,7 +2,7 @@ import os
 from flask import Flask, render_template, send_from_directory
 from jinja2 import TemplateNotFound
 from werkzeug.exceptions import NotFound as WerkzeugNotFound
-from models import db
+from models import db, Utilizador
 
 
 def create_app():
@@ -78,6 +78,17 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+
+        admin = Utilizador.query.filter_by(username='admin').first()
+        if not admin:
+            db.session.add(Utilizador(
+                username='admin',
+                password='1234',
+                nome='Administrador',
+                role='admin',
+                ativo=True
+            ))
+            db.session.commit()
 
     return app
 
