@@ -432,7 +432,15 @@ def carregar_portal(student_id):
 
         if not aluno:
             return {
-                "aluno": {"classe": "0"},
+                "aluno": {
+                    "id": student_id,
+                    "nome": "Estudante não encontrado",
+                    "classe": "-",
+                    "turma": "-",
+                    "grupo": "-",
+                    "media_geral": "-",
+                    "situacao": None,
+                },
                 "pauta_disciplinas": [],
                 "aviso_painel": "Estudante não encontrado no sistema escolar."
             }
@@ -452,7 +460,15 @@ def carregar_portal(student_id):
             logging.warning("Modelo Aviso não encontrado ou erro na consulta de aviso ativo.")
 
         return {
-            "aluno": aluno,
+            "aluno": {
+                "id": aluno.id,
+                "nome": getattr(aluno, 'nome', 'Sem nome'),
+                "classe": getattr(aluno, 'classe', '-') or '-',
+                "turma": getattr(aluno, 'turma', '-') or '-',
+                "grupo": getattr(aluno, 'grupo', '-') or '-',
+                "media_geral": getattr(aluno, 'media_geral', '-') or '-',
+                "situacao": getattr(aluno, 'situacao', None),
+            },
             "pauta_disciplinas": pauta_disciplinas,
             "aviso_painel": aviso_mensagem
         }

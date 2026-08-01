@@ -9,7 +9,7 @@ gestao_bp = Blueprint('gestao', __name__)
 @gestao_bp.route('/painel')
 def painel():
     """Página principal do painel de controlo."""
-    return render_template('painel.html')
+    return render_template('gestao.html')
 
 
 @gestao_bp.route('/gestao-alunos', methods=['GET'])
@@ -27,7 +27,7 @@ def gestao_alunos():
     alunos = query.all()
 
     return render_template(
-        'gestao_alunos.html', 
+        'gestao.html', 
         alunos=alunos, 
         aluno_edicao=None
     )
@@ -40,7 +40,7 @@ def editar_aluno(aluno_id):
     alunos = Aluno.query.filter_by(deleted_at=None).all()
 
     return render_template(
-        'gestao_alunos.html', 
+        'gestao.html', 
         alunos=alunos, 
         aluno_edicao=aluno_selecionado
     )
