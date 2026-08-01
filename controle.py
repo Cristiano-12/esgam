@@ -18,6 +18,8 @@ from models import (
     Carrossel,
     Aluno,
     Professor,
+    Classe,
+    Grupo,
     Turma,
     Comunicado,
     FAQ,
@@ -60,6 +62,13 @@ class DiretorFake:
         self.titulo = "Mensagem da Direção"
         self.texto = "Mensagem ainda não disponível."
         self.foto = "placeholder.png"
+
+
+class FAQFake:
+    def __init__(self):
+        self.id = ""
+        self.pergunta = ""
+        self.resposta = ""
 
 
 class ContactoFake:
@@ -130,10 +139,10 @@ def obter_estatisticas():
             return 0
 
     return [
-        {"label": "Ano de Fundação", "valor": 2000, "animar": False, "sufixo": ""},
-        {"label": "Alunos Registados", "valor": contar(Aluno), "animar": True, "sufixo": "+"},
-        {"label": "Corpo Docente", "valor": contar(Professor), "animar": True, "sufixo": ""},
-        {"label": "Turmas Activas", "valor": contar(Turma), "animar": True, "sufixo": ""}
+        {"id": 1, "cod": "ANO", "label": "Ano de Fundação", "valor": 2000, "animar": False, "sufixo": ""},
+        {"id": 2, "cod": "ALUNO", "label": "Alunos Registados", "valor": contar(Aluno), "animar": True, "sufixo": "+"},
+        {"id": 3, "cod": "PROF", "label": "Corpo Docente", "valor": contar(Professor), "animar": True, "sufixo": ""},
+        {"id": 4, "cod": "TURMA", "label": "Turmas Activas", "valor": contar(Turma), "animar": True, "sufixo": ""}
     ]
 
 
@@ -214,8 +223,40 @@ def carregar_index():
 @controle_bp.route('/admin/verificacao', methods=['GET'])
 @login_required
 def central_verificacao():
-    erros_pauta = PendenciaPauta.query.filter_by(status='pendente').order_by(PendenciaPauta.id.desc()).all()
-    return render_template('visao_geral.html', erros_pauta=erros_pauta)
+    pendencias = PendenciaPauta.query.filter_by(status='pendente').order_by(PendenciaPauta.id.desc()).all()
+
+    config = ConfiguracaoSistema.query.first()
+    portal_notas_aberto = config.portal_aberto if config else True
+    portal_pauta_aberto = config.modo_pauta_aberto if config else True
+
+    faqs = obter_faq()
+    faq1 = faqs[0] if len(faqs) > 0 else FAQFake()
+    faq2 = faqs[1] if len(faqs) > 1 else FAQFake()
+
+    contexto = {
+        "total_alunos": Aluno.query.filter_by(deleted_at=None).count(),
+        "total_classes": Classe.query.filter_by(deleted_at=None).count(),
+        "total_grupos": Grupo.query.filter_by(deleted_at=None).count(),
+        "trimestre_atual": (config.ano_letivo if config else datetime.now().year),
+        "banner": obter_banner(),
+        "sobre": obter_sobre(),
+        "diretor": obter_diretor(),
+        "contacto": obter_contacto(),
+        "ano_atual": datetime.now().year,
+        "estatisticas": obter_estatisticas(),
+        "fotos_carrossel": obter_carrossel(),
+        "faq_dinamico": faqs,
+        "faq1": faq1,
+        "faq2": faq2,
+        "portal_notas_aberto": portal_notas_aberto,
+        "portal_pauta_aberto": portal_pauta_aberto,
+        "publicacoes": Publicacao.query.filter_by(ativo=True).order_by(Publicacao.data_publicacao.desc()).all(),
+        "excel_recebidos": 0,
+        "excel_importados": 0,
+        "pendencias": pendencias,
+    }
+
+    return render_template('controle.html', **contexto)
 
 
 @controle_bp.route('/admin/publicacoes', methods=['GET', 'POST'])
@@ -230,7 +271,7 @@ def gerir_publicacoes():
 
         if not titulo or not arquivo:
             flash('Título e PDF são obrigatórios.', 'erro')
-            return redirect(url_for('controle.gerir_publicacoes'))
+            return redirect(url_for('controle.central_verificacao'))
 
         nome_arquivo = arquivo.filename or 'documento.pdf'
         caminho = os.path.join('static', 'uploads', 'publicacoes', nome_arquivo)
@@ -247,10 +288,9 @@ def gerir_publicacoes():
         db.session.add(publicacao)
         db.session.commit()
         flash('Publicação criada com sucesso.', 'sucesso')
-        return redirect(url_for('controle.gerir_publicacoes'))
 
-    publicacoes = Publicacao.query.filter_by(ativo=True).order_by(Publicacao.data_publicacao.desc()).all()
-    return render_template('controle.html', publicacoes=publicacoes)
+    return redirect(url_for('controle.central_verificacao'))
+
 
 
 @controle_bp.route('/admin/substituir-pauta', methods=['POST'])
@@ -432,15 +472,7 @@ def carregar_portal(student_id):
 
         if not aluno:
             return {
-                "aluno": {
-                    "id": student_id,
-                    "nome": "Estudante não encontrado",
-                    "classe": "-",
-                    "turma": "-",
-                    "grupo": "-",
-                    "media_geral": "-",
-                    "situacao": None,
-                },
+                "aluno": {"classe": "0"},
                 "pauta_disciplinas": [],
                 "aviso_painel": "Estudante não encontrado no sistema escolar."
             }
@@ -460,15 +492,7 @@ def carregar_portal(student_id):
             logging.warning("Modelo Aviso não encontrado ou erro na consulta de aviso ativo.")
 
         return {
-            "aluno": {
-                "id": aluno.id,
-                "nome": getattr(aluno, 'nome', 'Sem nome'),
-                "classe": getattr(aluno, 'classe', '-') or '-',
-                "turma": getattr(aluno, 'turma', '-') or '-',
-                "grupo": getattr(aluno, 'grupo', '-') or '-',
-                "media_geral": getattr(aluno, 'media_geral', '-') or '-',
-                "situacao": getattr(aluno, 'situacao', None),
-            },
+            "aluno": aluno,
             "pauta_disciplinas": pauta_disciplinas,
             "aviso_painel": aviso_mensagem
         }
