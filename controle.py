@@ -1,4 +1,5 @@
 import logging
+import os
 from datetime import datetime
 from functools import wraps
 from flask import (
@@ -26,7 +27,8 @@ from models import (
     PendenciaPauta,
     Nota,
     NotaTemporaria,
-    Aviso
+    Aviso,
+    Publicacao
 )
 
 controle_bp = Blueprint("controle", __name__)
@@ -50,14 +52,14 @@ class SobreFake:
         self.eyebrow = "ESGAM"
         self.titulo = "Escola Secundária Geral de Alto Molócuè"
         self.texto = "Informações institucionais ainda não foram cadastradas."
-        self.foto = "sem_foto.png"
+        self.foto = "placeholder.png"
 
 
 class DiretorFake:
     def __init__(self):
         self.titulo = "Mensagem da Direção"
         self.texto = "Mensagem ainda não disponível."
-        self.foto = "sem_diretor.png"
+        self.foto = "placeholder.png"
 
 
 class ContactoFake:
@@ -213,7 +215,42 @@ def carregar_index():
 @login_required
 def central_verificacao():
     erros_pauta = PendenciaPauta.query.filter_by(status='pendente').order_by(PendenciaPauta.id.desc()).all()
-    return render_template('verificacao.html', erros_pauta=erros_pauta)
+    return render_template('visao_geral.html', erros_pauta=erros_pauta)
+
+
+@controle_bp.route('/admin/publicacoes', methods=['GET', 'POST'])
+@login_required
+def gerir_publicacoes():
+    if request.method == 'POST':
+        titulo = request.form.get('titulo', '').strip()
+        categoria = request.form.get('categoria', 'Outro').strip()
+        descricao = request.form.get('descricao', '').strip()
+        classe = request.form.get('classe', '').strip()
+        arquivo = request.files.get('arquivo')
+
+        if not titulo or not arquivo:
+            flash('Título e PDF são obrigatórios.', 'erro')
+            return redirect(url_for('controle.gerir_publicacoes'))
+
+        nome_arquivo = arquivo.filename or 'documento.pdf'
+        caminho = os.path.join('static', 'uploads', 'publicacoes', nome_arquivo)
+        arquivo.save(caminho)
+
+        publicacao = Publicacao(
+            titulo=titulo,
+            categoria=categoria or 'Outro',
+            descricao=descricao or None,
+            classe=classe or None,
+            arquivo=nome_arquivo,
+            ativo=True
+        )
+        db.session.add(publicacao)
+        db.session.commit()
+        flash('Publicação criada com sucesso.', 'sucesso')
+        return redirect(url_for('controle.gerir_publicacoes'))
+
+    publicacoes = Publicacao.query.filter_by(ativo=True).order_by(Publicacao.data_publicacao.desc()).all()
+    return render_template('controle.html', publicacoes=publicacoes)
 
 
 @controle_bp.route('/admin/substituir-pauta', methods=['POST'])

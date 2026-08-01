@@ -278,7 +278,7 @@ class Sobre(db.Model):
     eyebrow = db.Column(db.String(100), nullable=True)
     titulo = db.Column(db.String(200), nullable=False)
     texto = db.Column(db.Text, nullable=False)
-    foto = db.Column(db.String(255), nullable=True, default="sem_foto.png")
+    foto = db.Column(db.String(255), nullable=True, default="placeholder.png")
 
     def __repr__(self):
         return f"<Sobre {self.titulo}>"
@@ -290,7 +290,7 @@ class Diretor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     titulo = db.Column(db.String(200), nullable=False)
     texto = db.Column(db.Text, nullable=False)
-    foto = db.Column(db.String(255), nullable=True, default="sem_diretor.png")
+    foto = db.Column(db.String(255), nullable=True, default="placeholder.png")
 
     def __repr__(self):
         return f"<Diretor {self.titulo}>"
@@ -305,6 +305,22 @@ class Contacto(db.Model):
 
     def __repr__(self):
         return f"<Contacto email={self.email}>"
+
+
+class Publicacao(db.Model):
+    __tablename__ = 'publicacoes'
+
+    id = db.Column(db.Integer, primary_key=True)
+    titulo = db.Column(db.String(200), nullable=False)
+    categoria = db.Column(db.String(50), nullable=False, default='Outro')
+    descricao = db.Column(db.Text, nullable=True)
+    classe = db.Column(db.String(20), nullable=True)
+    arquivo = db.Column(db.String(255), nullable=False)
+    data_publicacao = db.Column(db.DateTime, default=datetime.now)
+    ativo = db.Column(db.Boolean, default=True, nullable=False)
+
+    def __repr__(self):
+        return f"<Publicacao {self.titulo}>"
 
 
 # ==========================================

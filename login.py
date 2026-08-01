@@ -19,10 +19,18 @@ def login():
         return redirect(url_for("login.login"))
 
     # 3. Consulta ORM limpa e segura
-    utilizador = Utilizador.query.filter_by(
-        id_escolar=id_utilizador,
-        senha=senha
-    ).first()
+    if id_utilizador.isdigit():
+        utilizador = Utilizador.query.filter(
+            ((Utilizador.username == id_utilizador) | (Utilizador.id == int(id_utilizador))),
+            Utilizador.password == senha,
+            Utilizador.ativo.is_(True)
+        ).first()
+    else:
+        utilizador = Utilizador.query.filter(
+            Utilizador.username == id_utilizador,
+            Utilizador.password == senha,
+            Utilizador.ativo.is_(True)
+        ).first()
 
     if not utilizador:
         flash("ID ou senha incorretos.", "erro")
@@ -30,12 +38,12 @@ def login():
 
     # 4. Registo na Sessão
     session["id"] = utilizador.id
-    session["id_escolar"] = utilizador.id_escolar
+    session["username"] = utilizador.username
     session["nome"] = utilizador.nome
-    session["tipo"] = utilizador.tipo
+    session["role"] = utilizador.role
 
     # 5. Redirecionamento baseado no tipo de perfil
-    if utilizador.tipo in ["direcao", "admin"]:
+    if utilizador.role in ["direcao", "admin"]:
         # Flag necessária para liberar o decorator @login_required no controle.py
         session["admin_logged_in"] = True
         return redirect(url_for("controle.central_verificacao"))
