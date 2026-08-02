@@ -2,6 +2,7 @@ import logging
 import os
 from datetime import datetime
 from functools import wraps
+from werkzeug.utils import secure_filename
 from flask import (
     Blueprint,
     render_template,
@@ -96,22 +97,6 @@ def login_required(f):
 # 3. SERVIÇOS DA PÁGINA INICIAL (INDEX)
 # ==========================================
 
-def obter_configuracoes():
-    try:
-        config = ConfiguracaoSistema.query.first()
-        if config:
-            return (
-                config.portal_aberto,
-                config.mensagem_portal or "",
-                config.turmas_abertas,
-                config.mensagem_turmas or ""
-            )
-    except Exception:
-        logging.exception("Erro ao carregar configurações.")
-
-    return True, "", True, ""
-
-
 def obter_banner():
     try:
         banner = Banner.query.filter_by(ativo=True).first()
@@ -197,13 +182,7 @@ def obter_contacto():
 
 def carregar_index():
     """Agrupa todos os dados necessários para renderizar a página inicial."""
-    portal_disp, portal_msg, turmas_disp, turmas_msg = obter_configuracoes()
-
     return {
-        "portal_disponivel": portal_disp,
-        "portal_mensagem": portal_msg,
-        "turmas_disponivel": turmas_disp,
-        "turmas_mensagem": turmas_msg,
         "banner": obter_banner(),
         "fotos_carrossel": obter_carrossel(),
         "estatisticas": obter_estatisticas(),
@@ -226,8 +205,6 @@ def central_verificacao():
     pendencias = PendenciaPauta.query.filter_by(status='pendente').order_by(PendenciaPauta.id.desc()).all()
 
     config = ConfiguracaoSistema.query.first()
-    portal_notas_aberto = config.portal_aberto if config else True
-    portal_pauta_aberto = config.modo_pauta_aberto if config else True
 
     faqs = obter_faq()
     faq1 = faqs[0] if len(faqs) > 0 else FAQFake()
@@ -248,8 +225,6 @@ def central_verificacao():
         "faq_dinamico": faqs,
         "faq1": faq1,
         "faq2": faq2,
-        "portal_notas_aberto": portal_notas_aberto,
-        "portal_pauta_aberto": portal_pauta_aberto,
         "publicacoes": Publicacao.query.filter_by(ativo=True).order_by(Publicacao.data_publicacao.desc()).all(),
         "excel_recebidos": 0,
         "excel_importados": 0,
@@ -273,8 +248,10 @@ def gerir_publicacoes():
             flash('Título e PDF são obrigatórios.', 'erro')
             return redirect(url_for('controle.central_verificacao'))
 
-        nome_arquivo = arquivo.filename or 'documento.pdf'
-        caminho = os.path.join('static', 'uploads', 'publicacoes', nome_arquivo)
+        nome_arquivo = secure_filename(arquivo.filename) or 'documento.pdf'
+        pasta_destino = os.path.join('static', 'uploads', 'publicacoes')
+        os.makedirs(pasta_destino, exist_ok=True)
+        caminho = os.path.join(pasta_destino, nome_arquivo)
         arquivo.save(caminho)
 
         publicacao = Publicacao(
@@ -291,6 +268,294 @@ def gerir_publicacoes():
 
     return redirect(url_for('controle.central_verificacao'))
 
+
+def _guardar_ficheiro(campo_nome, subpasta='uploads'):
+    """Guarda um ficheiro enviado por upload e devolve o nome do ficheiro, ou None."""
+    arquivo = request.files.get(campo_nome)
+    if arquivo and arquivo.filename:
+        nome_arquivo = secure_filename(arquivo.filename)
+        pasta_destino = os.path.join('static', subpasta)
+        os.makedirs(pasta_destino, exist_ok=True)
+        caminho = os.path.join(pasta_destino, nome_arquivo)
+        arquivo.save(caminho)
+        return nome_arquivo
+    return None
+
+
+@controle_bp.route('/admin/banner', methods=['POST'])
+@login_required
+def atualizar_banner():
+    status = request.form.get('status', 'info').strip()
+    titulo = request.form.get('titulo', '').strip()
+    mensagem = request.form.get('mensagem', '').strip()
+    link_texto = request.form.get('link_texto', '').strip()
+
+    banner = Banner.query.filter_by(ativo=True).first()
+    if not banner:
+        banner = Banner(titulo=titulo, mensagem=mensagem, ativo=True)
+        db.session.add(banner)
+
+    banner.status = status
+    banner.titulo = titulo
+    banner.mensagem = mensagem
+    banner.link_texto = link_texto
+
+    try:
+        db.session.commit()
+        flash('Banner atualizado com sucesso!', 'banner')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao atualizar o banner: {str(e)}', 'banner')
+
+    return redirect(url_for('controle.central_verificacao'))
+
+
+@controle_bp.route('/admin/sobre', methods=['POST'])
+@login_required
+def atualizar_sobre():
+    texto = request.form.get('texto', '').strip()
+
+    sobre = Sobre.query.first()
+    if not sobre:
+        sobre = Sobre(titulo='Sobre a Escola', texto=texto)
+        db.session.add(sobre)
+
+    sobre.texto = texto
+
+    nome_foto = _guardar_ficheiro('foto')
+    if nome_foto:
+        sobre.foto = nome_foto
+
+    try:
+        db.session.commit()
+        flash('Informações atualizadas com sucesso!', 'sobre')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao atualizar informações: {str(e)}', 'sobre')
+
+    return redirect(url_for('controle.central_verificacao'))
+
+
+@controle_bp.route('/admin/diretor', methods=['POST'])
+@login_required
+def atualizar_diretor():
+    titulo = request.form.get('titulo', '').strip()
+    texto = request.form.get('texto', '').strip()
+
+    diretor = Diretor.query.first()
+    if not diretor:
+        diretor = Diretor(titulo=titulo, texto=texto)
+        db.session.add(diretor)
+
+    diretor.titulo = titulo
+    diretor.texto = texto
+
+    nome_foto = _guardar_ficheiro('foto')
+    if nome_foto:
+        diretor.foto = nome_foto
+
+    try:
+        db.session.commit()
+        flash('Mensagem do diretor atualizada com sucesso!', 'diretor')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao atualizar mensagem: {str(e)}', 'diretor')
+
+    return redirect(url_for('controle.central_verificacao'))
+
+
+@controle_bp.route('/admin/comunicado', methods=['POST'])
+@login_required
+def publicar_comunicado():
+    titulo = request.form.get('titulo', '').strip()
+    texto = request.form.get('texto', '').strip()
+
+    if not titulo or not texto:
+        flash('Título e mensagem são obrigatórios.', 'comunicado')
+        return redirect(url_for('controle.central_verificacao'))
+
+    novo = Comunicado(titulo=titulo, texto=texto)
+    db.session.add(novo)
+
+    try:
+        db.session.commit()
+
+        # Mantém apenas os 3 comunicados mais recentes
+        todos = Comunicado.query.order_by(Comunicado.data.desc()).all()
+        for antigo in todos[3:]:
+            db.session.delete(antigo)
+        db.session.commit()
+
+        flash('Comunicado publicado com sucesso!', 'comunicado')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao publicar comunicado: {str(e)}', 'comunicado')
+
+    return redirect(url_for('controle.central_verificacao'))
+
+
+@controle_bp.route('/admin/contacto', methods=['POST'])
+@login_required
+def atualizar_contacto():
+    email = request.form.get('email', '').strip()
+    telefone = request.form.get('telefone', '').strip()
+
+    contacto = Contacto.query.first()
+    if not contacto:
+        contacto = Contacto(email=email or 'esgam@email.com', telefone=telefone or '-')
+        db.session.add(contacto)
+
+    if email:
+        contacto.email = email
+    if telefone:
+        contacto.telefone = telefone
+
+    try:
+        db.session.commit()
+        flash('Contactos atualizados com sucesso!', 'contacto')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao atualizar contactos: {str(e)}', 'contacto')
+
+    return redirect(url_for('controle.central_verificacao'))
+
+
+@controle_bp.route('/admin/faq', methods=['POST'])
+@login_required
+def atualizar_faq():
+    faq_id = request.form.get('id')
+    pergunta = request.form.get('pergunta', '').strip()
+    resposta = request.form.get('resposta', '').strip()
+
+    if not faq_id:
+        flash('Selecione uma pergunta válida.', 'faq')
+        return redirect(url_for('controle.central_verificacao'))
+
+    item = FAQ.query.get(faq_id)
+    if not item:
+        item = FAQ(pergunta=pergunta, resposta=resposta)
+        db.session.add(item)
+    else:
+        item.pergunta = pergunta
+        item.resposta = resposta
+
+    try:
+        db.session.commit()
+        flash('FAQ atualizada com sucesso!', 'faq')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao atualizar FAQ: {str(e)}', 'faq')
+
+    return redirect(url_for('controle.central_verificacao'))
+
+
+@controle_bp.route('/admin/publicar-aviso', methods=['POST'])
+@login_required
+def publicar_aviso():
+    destino = request.form.get('destino', '').strip()
+    mensagem = request.form.get('mensagem', '').strip()
+
+    if not destino or not mensagem:
+        flash('Destino e mensagem são obrigatórios.', 'aviso')
+        return redirect(url_for('controle.central_verificacao'))
+
+    # Desativa avisos anteriores e publica o novo como ativo
+    Aviso.query.filter_by(ativo=True).update({'ativo': False})
+
+    novo_aviso = Aviso(
+        mensagem=f"[{destino}] {mensagem}",
+        texto=mensagem,
+        ativo=True
+    )
+    db.session.add(novo_aviso)
+
+    try:
+        db.session.commit()
+        flash('Aviso publicado com sucesso!', 'aviso')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao publicar aviso: {str(e)}', 'aviso')
+
+    return redirect(url_for('controle.central_verificacao'))
+
+
+@controle_bp.route('/admin/grupos', methods=['POST'])
+@login_required
+def gerir_grupos():
+    classe_numero = request.form.get('classe', '').strip()
+    turma_nome = request.form.get('turma', '').strip()
+    grupo_nome = request.form.get('grupo', '').strip()
+
+    if not classe_numero or not turma_nome or not grupo_nome:
+        flash('Classe, turma e grupo são obrigatórios.', 'grupo')
+        return redirect(url_for('controle.central_verificacao'))
+
+    try:
+        classe_numero = int(classe_numero)
+    except ValueError:
+        flash('Classe inválida.', 'grupo')
+        return redirect(url_for('controle.central_verificacao'))
+
+    classe = Classe.query.filter_by(numero=classe_numero, deleted_at=None).first()
+    if not classe:
+        classe = Classe(numero=classe_numero, nome=f"{classe_numero}ª Classe")
+        db.session.add(classe)
+        db.session.flush()
+
+    grupo = Grupo.query.filter_by(nome=grupo_nome, classe_id=classe.id, deleted_at=None).first()
+    if not grupo:
+        grupo = Grupo(nome=grupo_nome, classe_id=classe.id)
+        db.session.add(grupo)
+        db.session.flush()
+
+    turma = Turma.query.filter_by(nome=turma_nome, grupo_id=grupo.id, deleted_at=None).first()
+    if not turma:
+        turma = Turma(nome=turma_nome, classe_id=classe.id, grupo_id=grupo.id)
+        db.session.add(turma)
+
+    try:
+        db.session.commit()
+        flash(f'Grupo "{grupo_nome}" e turma "{turma_nome}" criados/confirmados com sucesso!', 'grupo')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao criar grupo/turma: {str(e)}', 'grupo')
+
+    return redirect(url_for('controle.central_verificacao'))
+
+
+@controle_bp.route('/admin/carrossel', methods=['POST'])
+@login_required
+def atualizar_carrossel():
+    posicoes_atualizadas = []
+
+    for posicao in range(1, 6):
+        nome_foto = _guardar_ficheiro(f'foto{posicao}')
+        if not nome_foto:
+            continue
+
+        item = Carrossel.query.filter_by(ordem=posicao).first()
+        if not item:
+            item = Carrossel(imagem=nome_foto, ordem=posicao, ativo=True)
+            db.session.add(item)
+        else:
+            item.imagem = nome_foto
+            item.ativo = True
+
+        posicoes_atualizadas.append(posicao)
+
+    if not posicoes_atualizadas:
+        flash('Nenhuma imagem foi selecionada — o carrossel não foi alterado.', 'carrossel')
+        return redirect(url_for('controle.central_verificacao'))
+
+    try:
+        db.session.commit()
+        posicoes_texto = ', '.join(str(p) for p in posicoes_atualizadas)
+        flash(f'Carrossel atualizado com sucesso! Posição(ões) alterada(s): {posicoes_texto}.', 'carrossel')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao atualizar carrossel: {str(e)}', 'carrossel')
+
+    return redirect(url_for('controle.central_verificacao'))
 
 
 @controle_bp.route('/admin/substituir-pauta', methods=['POST'])
