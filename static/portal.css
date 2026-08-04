@@ -14,7 +14,9 @@ body {
     margin: 0;
     padding: 0;
     overflow-x: hidden;
-    background-color: #f8fafc;
+    background:
+        radial-gradient(circle at top left, rgb(47 111 165 / 6%), transparent 24%),
+        linear-gradient(180deg, #f8fafc 0%, #eef4fa 100%);
 }
 
 /* ===================================
@@ -25,7 +27,7 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 35px 20px;
+    padding: 34px 20px 20px;
     background: transparent;
     position: relative;
     width: 100%;
@@ -36,6 +38,12 @@ body {
     display: flex;
     justify-content: center;
     width: 100%;
+}
+
+.header-logo-container img {
+    width: 86px;
+    height: auto;
+    object-fit: contain;
 }
 
 .header-left .school-logo {
@@ -83,6 +91,12 @@ body {
     transition: color 0.2s ease;
 }
 
+.top-corner-link {
+    background: rgb(255 255 255 / 70%);
+    border-color: rgb(203 213 225 / 60%);
+    box-shadow: 0 8px 16px rgb(15 23 42 / 6%);
+}
+
 #menu-btn:hover {
     background-color: transparent;
     color: #1e293b;
@@ -95,8 +109,8 @@ body {
     top: 110%;
     background-color: #fff;
     border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 10%);
+    border-radius: 12px;
+    box-shadow: 0 12px 24px rgb(15 23 42 / 12%);
     min-width: 160px;
     z-index: 100;
     overflow: hidden;
@@ -131,7 +145,7 @@ body {
     width: 100%;
     max-width: 1400px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 24px;
     box-sizing: border-box;
 }
 
@@ -144,24 +158,25 @@ body {
 }
 
 .card {
-    background: #fff;
-    border-radius: 8px;
+    background: rgb(255 255 255 / 92%);
+    border-radius: 16px;
     padding: 24px;
-    border: 1px solid #cbd5e1;
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 30%);
+    border: 1px solid rgb(203 213 225 / 90%);
+    box-shadow: 0 18px 40px rgb(15 23 42 / 9%);
     box-sizing: border-box;
     width: 100%;
     min-width: 0;
+    backdrop-filter: blur(10px);
 }
 
 .card h2 {
-    font-size: 0.9rem;
+    font-size: 0.82rem;
     margin-bottom: 18px;
-    color: #475569;
+    color: #64748b;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.12em;
     border-bottom: 1px solid #e2e8f0;
-    padding-bottom: 8px;
+    padding-bottom: 10px;
 }
 
 /* ===================================
@@ -195,7 +210,7 @@ body {
    BLOCO DE DESTAQUE DE MEDIA FINAL
 =================================== */
 .final-average-box {
-    border-left: 6px solid #4c1d95;
+    border-left: 6px solid #2f6fa5;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -203,9 +218,9 @@ body {
 }
 
 .final-score {
-    font-size: 3.2rem;
+    font-size: clamp(2.8rem, 7vw, 4rem);
     font-weight: 900;
-    color: #1e293b;
+    color: #0f172a;
     margin-top: 5px;
 }
 
@@ -224,9 +239,10 @@ body {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     border: 1px solid #cbd5e1;
-    border-radius: 6px;
+    border-radius: 12px;
     margin-top: 10px;
     box-sizing: border-box;
+    background: #fff;
 }
 
 table {
@@ -237,7 +253,7 @@ table {
 }
 
 th {
-    background: #f1f5f9;
+    background: #f8fafc;
     color: #1e293b;
     font-size: 0.75rem;
     padding: 12px 6px;

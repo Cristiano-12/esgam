@@ -1,10 +1,12 @@
 .dashboard {
     width: 100%;
-    padding: 30px 20px;
+    padding: 28px 20px 36px;
     max-width: 100%;
     box-sizing: border-box;
     font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    background-color: #f8fafc;
+    background:
+        radial-gradient(circle at top left, rgb(47 111 165 / 6%), transparent 24%),
+        linear-gradient(180deg, #f8fafc 0%, #eef4fa 100%);
     min-height: 100vh;
 }
 
@@ -22,16 +24,17 @@
 }
 
 .card {
-    background-color: #fff;
-    border-radius: 16px;
+    background-color: rgb(255 255 255 / 92%);
+    border-radius: 18px;
     padding: 24px;
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 5%), 0 2px 4px -1px rgb(0 0 0 / 3%);
-    border: 1px solid #e2e8f0;
+    box-shadow: 0 18px 40px rgb(15 23 42 / 8%);
+    border: 1px solid rgb(226 232 240 / 90%);
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
     overflow: visible;
     transition: transform .2s ease, box-shadow .2s ease;
+    backdrop-filter: blur(10px);
 }
 
 .card:hover {
@@ -40,7 +43,7 @@
 }
 
 .card h2 {
-    font-size: 1.3rem;
+    font-size: 1.18rem;
     font-weight: 700;
     color: #1e293b;
     margin-top: 0;
@@ -93,7 +96,7 @@ select {
     width: 100%;
     padding: 12px 14px;
     border: 1px solid #cbd5e1;
-    border-radius: 6px;
+    border-radius: 12px;
     font-size: 0.95rem;
     background-color: #fff;
     color: #1e293b;
@@ -361,7 +364,7 @@ button:disabled,
 }
 
 .table-lixeira th {
-  padding: 10px 8px;
+  padding: 12px 10px;
   border-bottom: 2px solid #cbd5e1;
   background-color: #f8fafc;
 }

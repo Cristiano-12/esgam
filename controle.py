@@ -133,7 +133,7 @@ def obter_estatisticas():
 
 def obter_comunicados():
     try:
-        return Comunicado.query.order_by(Comunicado.data.desc()).all()
+        return Comunicado.query.order_by(Comunicado.data.desc()).limit(1).all()
     except Exception:
         logging.exception("Erro ao carregar comunicados.")
         return []
@@ -141,7 +141,7 @@ def obter_comunicados():
 
 def obter_faq():
     try:
-        return FAQ.query.order_by(FAQ.id.desc()).all()
+        return FAQ.query.order_by(FAQ.id.desc()).limit(1).all()
     except Exception:
         logging.exception("Erro ao carregar FAQ.")
         return []

@@ -48,7 +48,8 @@
                 id="loginForm"
                 method="POST"
                 action="{{ url_for('login.login') }}"
-                novalidate>
+                novalidate
+                autocomplete="off">
 
                 <div class="input-field">
 
@@ -56,12 +57,13 @@
                         ID do estudante
                     </label>
 
-                    <input
+                <input
                         type="text"
                         id="studentID"
                         name="studentID"
                         placeholder="Ex.: 202610045"
                         autocomplete="username"
+                        maxlength="20"
                         required
                         autofocus>
 
@@ -81,6 +83,7 @@
                             name="password"
                             placeholder="Introduza a sua senha"
                             autocomplete="current-password"
+                            maxlength="64"
                             required>
 
                         <button

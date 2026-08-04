@@ -5,7 +5,7 @@
 .main-header {
     display: flex;
     justify-content: center;
-    padding: 0;
+    padding: 28px 0 10px;
 }
  
 
@@ -16,7 +16,7 @@ main{
     flex: 1;
     display: flex;
     justify-content: center;
-    padding: 0 24px 24px;
+    padding: 24px 24px 32px;
 }
 
 /* ===================================
@@ -25,13 +25,12 @@ main{
 .login-section {
     width: 100%;
     max-width: 420px;
-    background: #fefefe;
-    border: none;
+    background: rgb(255 255 255 / 94%);
+    border: 1px solid rgb(226 232 240 / 90%);
     border-radius: 24px;
-    padding: 24px 40px 40px;
-    box-shadow:
-    0 0 8px rgb(255 255 255 / 30%),
-    0 8px 20px rgb(0 0 0 / 25%)
+    padding: 28px 40px 40px;
+    box-shadow: 0 18px 45px rgb(15 23 42 / 12%);
+    backdrop-filter: blur(10px);
 }
 
 .login-section h1 {
@@ -40,13 +39,11 @@ main{
     letter-spacing: -0.025em;
     margin-bottom: 10px;
     text-align: center;
-    background: linear-gradient(to right, #fff, #cbd5e1);
-    background-clip: text;
-    -webkit-text-fill-color: initial;
+    color: #0f172a;
 }
 
 .login-section p {
-    color: #000710;
+    color: #64748b;
     text-align: center;
     font-size: 0.95rem;
     line-height: 1.6;
@@ -70,16 +67,16 @@ form {
 .input-field label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: #262627;
+    color: #334155;
 }
 
 .input-field input {
     width: 100%;
     padding: 14px 16px;
     border-radius: 14px;
-    border: 1px solid #d1d5db;
+    border: 1px solid #cbd5e1;
     background: #fff;
-    color: #252424;
+    color: #0f172a;
     font-size: 1rem;
     outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -91,8 +88,8 @@ form {
 }
 
 .input-field input:focus {
-    border-color: #818cf8;
-    box-shadow: 0 0 0 4px rgb(99 102 241 / 12%);
+    border-color: #2f6fa5;
+    box-shadow: 0 0 0 4px rgb(47 111 165 / 14%);
 }
 
 
@@ -122,20 +119,21 @@ button[type="submit"] {
     border: none;
     border-radius: 14px;
     padding: 16px;
-    background: #A855f7;
+    background: linear-gradient(135deg, #2f6fa5, #1c4568);
     color: #fff;
     font-weight: 600;
     cursor: pointer;
     transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    box-shadow: 0 14px 28px rgb(47 111 165 / 22%);
 }
 
 button[type="submit"]:hover {
-    background: #4f46e5;
-    box-shadow: 0 4px 12px rgb(99 102 241 / 30%);
+    transform: translateY(-1px);
+    box-shadow: 0 16px 32px rgb(47 111 165 / 28%);
 }
 
 button[type="submit"]:active {
-    border-bottom: 3px solid #fbbf24;
+    transform: translateY(0);
 }
 
 /* ===================================
@@ -143,18 +141,16 @@ button[type="submit"]:active {
 =================================== */
 @media (width <= 480px) {
     body {
-        padding: 12px;
+        padding: 10px;
     }
 
     .login-section {
-        padding: 32px 24px;
+        padding: 28px 20px;
         border-radius: 20px;
     }
 
     .login-section h1 {
-        margin-left: -10px;
         font-size: 1.75rem;
         text-align: center;
-        
     }
 }

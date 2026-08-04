@@ -694,6 +694,14 @@ p {
   color: var(--primary-darker);
 }
 
+.notice-body p {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .empty-state {
   text-align: center;
   padding: 3rem 1rem;

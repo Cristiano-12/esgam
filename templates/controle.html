@@ -11,6 +11,7 @@
 </head>
 
 <body>
+    <a href="#" class="top-corner-link" data-back-one aria-label="Voltar uma página">←</a>
 
     <header class="main-header">
         <div class="header-logo-container">
@@ -159,7 +160,7 @@
 
                             <label>Título</label>
 
-                            <input type="text" name="titulo" value="{{ banner.titulo }}" required>
+                            <input type="text" name="titulo" value="{{ banner.titulo }}" maxlength="80" required>
 
                         </div>
 
@@ -167,7 +168,7 @@
 
                             <label>Mensagem</label>
 
-                            <textarea rows="5" name="mensagem" required>{{ banner.mensagem }}
+                            <textarea rows="5" name="mensagem" maxlength="280" required>{{ banner.mensagem }}
                                 </textarea>
 
                         </div>
@@ -176,7 +177,7 @@
 
                             <label>Texto do botão</label>
 
-                            <input type="text" name="link_texto" value="{{ banner.link_texto }}">
+                            <input type="text" name="link_texto" value="{{ banner.link_texto }}" maxlength="30">
 
                         </div>
 
@@ -211,7 +212,7 @@
 
                             <label>Texto</label>
 
-                            <textarea rows="7" name="texto">{{ sobre.texto }}
+                            <textarea rows="7" name="texto" maxlength="700">{{ sobre.texto }}
                                 </textarea>
 
                         </div>
@@ -258,7 +259,7 @@
                         enctype="multipart/form-data">
                         <div class="form-group">
                             <label>Título</label>
-                            <input type="text" name="titulo" required>
+                            <input type="text" name="titulo" maxlength="100" required>
                         </div>
 
                         <div class="form-group">
@@ -280,7 +281,7 @@
 
                         <div class="form-group">
                             <label>Descrição</label>
-                            <textarea rows="4" name="descricao"></textarea>
+                            <textarea rows="4" name="descricao" maxlength="240"></textarea>
                         </div>
 
                         <div class="form-group">
@@ -327,7 +328,7 @@
 
                             <label>Título</label>
 
-                            <input type="text" name="titulo" value="{{ diretor.titulo }}">
+                            <input type="text" name="titulo" value="{{ diretor.titulo }}" maxlength="80">
 
                         </div>
 
@@ -335,7 +336,7 @@
 
                             <label>Mensagem</label>
 
-                            <textarea rows="8" name="texto">{{ diretor.texto }}
+                            <textarea rows="8" name="texto" maxlength="700">{{ diretor.texto }}
                                 </textarea>
 
                         </div>
@@ -389,7 +390,7 @@
 
                         <div class="form-group">
                             <label>Mensagem</label>
-                            <textarea name="texto" rows="6" placeholder="Escreva o comunicado..." required>
+                            <textarea name="texto" rows="6" maxlength="360" placeholder="Escreva o comunicado..." required>
                             </textarea>
                         </div>
 
@@ -460,7 +461,7 @@
 
                             <label>Pergunta</label>
 
-                            <input id="faq-pergunta" type="text" name="pergunta" value="{{ faq1.pergunta }}" required>
+                            <input id="faq-pergunta" type="text" name="pergunta" value="{{ faq1.pergunta }}" maxlength="140" required>
 
                         </div>
 
@@ -468,7 +469,7 @@
 
                             <label>Resposta</label>
 
-                            <textarea id="faq-resposta" name="resposta" rows="5" required>{{ faq1.resposta }}</textarea>
+                            <textarea id="faq-resposta" name="resposta" rows="5" maxlength="320" required>{{ faq1.resposta }}</textarea>
 
                         </div>
 
@@ -535,7 +536,7 @@
 
                                 <label>Sufixo</label>
 
-                                <input type="text" name="sufixo" value="{{ stat.sufixo }}">
+                                <input type="text" name="sufixo" value="{{ stat.sufixo }}" maxlength="8">
 
                             </div>
 
@@ -583,7 +584,7 @@
 
                             <label>Telefone</label>
 
-                            <input type="text" name="telefone" value="{{ contacto.telefone }}">
+                            <input type="text" name="telefone" value="{{ contacto.telefone }}" maxlength="20">
 
                         </div>
 
@@ -702,13 +703,13 @@
 
                         <div class="form-group">
                             <label for="destinoAviso">Destino</label>
-                            <input type="text" id="destino-aviso" name="destino"
+                            <input type="text" id="destino-aviso" name="destino" maxlength="30"
                                 placeholder="Ex.: TODOS| 10 | 10A | 10/A | 10A/C | ID " required>
                         </div>
 
                         <div class="form-group">
                             <label for="msgAviso">Mensagem</label>
-                            <textarea id="msg-aviso" name="mensagem" placeholder="Digite o aviso..." required>
+                            <textarea id="msg-aviso" name="mensagem" maxlength="240" placeholder="Digite o aviso..." required>
                                     </textarea>
                         </div>
 
@@ -747,12 +748,12 @@
 
                         <div class="form-group">
                             <label for="turmaGrupo">Turma</label>
-                            <input type="text" id="turma-grupo" name="turma" placeholder="Ex.: A" required>
+                            <input type="text" id="turma-grupo" name="turma" placeholder="Ex.: A" maxlength="1" required>
                         </div>
 
                         <div class="form-group">
                             <label for="grupo">Grupo</label>
-                            <input type="text" id="grupo" name="grupo" placeholder="Ex.: A" required>
+                            <input type="text" id="grupo" name="grupo" placeholder="Ex.: A" maxlength="1" required>
                         </div>
 
                         <div class="action-buttons-row">
@@ -809,7 +810,7 @@
                         onsubmit="return confirm('Tens certeza que queres eliminar os registos selecionados?')">
                         <div class="form-group">
                             <label for="eliminarValor">Eliminar</label>
-                            <input type="text" id="eliminar-valor" name="eliminar"
+                            <input type="text" id="eliminar-valor" name="eliminar" maxlength="40"
                                 placeholder="Ex.TODOS| 10 | 10A | 10/A | 10A/C | ID " required>
 
                         </div>
