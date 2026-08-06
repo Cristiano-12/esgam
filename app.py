@@ -1,32 +1,76 @@
 import os
+import secrets
+
+from dotenv import load_dotenv
 from flask import Flask, render_template, send_from_directory
 from jinja2 import TemplateNotFound
-from werkzeug.exceptions import NotFound as WerkzeugNotFound
-from models import db, Utilizador
+from sqlalchemy.engine import URL
+from werkzeug.security import generate_password_hash
+
+from models import Utilizador, db
+
+
+load_dotenv()
+
+
+# ==========================================
+# Configuração
+# ==========================================
+def _build_database_uri() -> str:
+    db_host = os.getenv("DB_HOST", "").strip()
+    db_port = os.getenv("DB_PORT", "5432").strip()
+    db_name = os.getenv("DB_NAME", "").strip()
+    db_user = os.getenv("DB_USER", "").strip()
+    db_password = os.getenv("DB_PASSWORD", "").strip()
+
+    if db_port and not db_port.isdigit():
+        raise RuntimeError("DB_PORT inválida.")
+
+    if all([db_host, db_port, db_name, db_user, db_password]):
+        return URL.create(
+            drivername="postgresql+psycopg2",
+            username=db_user,
+            password=db_password,
+            host=db_host,
+            port=int(db_port),
+            database=db_name,
+        )
+
+    if os.getenv("VERCEL"):
+        return "sqlite:////tmp/esgam.db"
+
+    return "sqlite:///esgam.db"
 
 
 def create_app():
     app = Flask(__name__)
 
-    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "ESGAM_2026_CHAVE_INTERNA")
+    # SECRET_KEY dinâmica e limpa
+    secret_key = os.getenv("SECRET_KEY")
+    if not secret_key:
+        secret_key = secrets.token_hex(32)
+
+    app.config["SECRET_KEY"] = secret_key
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["SQLALCHEMY_DATABASE_URI"] = _build_database_uri()
 
-    if os.environ.get("VERCEL"):
-        app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:////tmp/esgam.db"
-    else:
-        app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///esgam.db"
-
+    # ==========================================
+    # Base de Dados
+    # ==========================================
     db.init_app(app)
 
-    from index import index_bp
-    from login import login_bp
-    from portal import portal_bp
+    # ==========================================
+    # Blueprints
+    # ==========================================
     from controle import controle_bp
+    from gestao import gestao_bp
+    from index import index_bp
+    from lixeira import lixeira_bp
+    from login import login_bp
+    from pauta import pauta_bp
+    from portal import portal_bp
     from registar import registar_bp
     from visao_geral import visao_bp
-    from lixeira import lixeira_bp
-    from pauta import pauta_bp
-    from gestao import gestao_bp
 
     app.register_blueprint(index_bp)
     app.register_blueprint(login_bp)
@@ -38,6 +82,9 @@ def create_app():
     app.register_blueprint(pauta_bp)
     app.register_blueprint(gestao_bp)
 
+    # ==========================================
+    # Error Handlers
+    # ==========================================
     @app.errorhandler(404)
     def pagina_nao_encontrada(e):
         try:
@@ -59,7 +106,7 @@ def create_app():
         except TemplateNotFound:
             return "<h1>Pedido inválido</h1>", 400
 
-    @app.route('/static/<path:filename>')
+    @app.route("/static/<path:filename>")
     def serve_static(filename):
         normalized_path = os.path.normpath(filename)
         if normalized_path.startswith("..") or normalized_path == "..":
@@ -76,19 +123,30 @@ def create_app():
 
         return "", 404
 
+    # ==========================================
+    # Inicialização
+    # ==========================================
     with app.app_context():
-        db.create_all()
+        try:
+            db.create_all()
 
-        admin = Utilizador.query.filter_by(username='admin').first()
-        if not admin:
-            db.session.add(Utilizador(
-                username='admin',
-                password='1234',
-                nome='Administrador',
-                role='admin',
-                ativo=True
-            ))
-            db.session.commit()
+            # Cria o utilizador admin apenas se não estiver a rodar no Vercel (ambiente local)
+            if not os.getenv("VERCEL"):
+                admin = Utilizador.query.filter_by(username="admin").first()
+                if not admin:
+                    db.session.add(
+                        Utilizador(
+                            username="admin",
+                            password=generate_password_hash("1234"),
+                            nome="Administrador",
+                            role="admin",
+                            ativo=True,
+                        )
+                    )
+                    db.session.commit()
+        except Exception as e:
+            app.logger.exception("Erro durante a inicialização da base de dados")
+            db.session.rollback()
 
     return app
 
