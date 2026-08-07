@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from werkzeug.security import check_password_hash
 from models import db, Utilizador  # Import do ORM e do Modelo
 
 login_bp = Blueprint("login", __name__)
@@ -22,17 +23,15 @@ def login():
     if id_utilizador.isdigit():
         utilizador = Utilizador.query.filter(
             ((Utilizador.username == id_utilizador) | (Utilizador.id == int(id_utilizador))),
-            Utilizador.password == senha,
             Utilizador.ativo.is_(True)
         ).first()
     else:
         utilizador = Utilizador.query.filter(
             Utilizador.username == id_utilizador,
-            Utilizador.password == senha,
             Utilizador.ativo.is_(True)
         ).first()
 
-    if not utilizador:
+    if not utilizador or not check_password_hash(utilizador.password or "", senha):
         flash("ID ou senha incorretos.", "erro")
         return redirect(url_for("login.login"))
 

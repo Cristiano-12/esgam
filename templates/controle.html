@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-PT">
 
 <head>
@@ -11,20 +11,20 @@
 </head>
 
 <body>
-    <a href="#" class="top-corner-link" data-back-one aria-label="Voltar uma página">←</a>
+    <a href="{{ url_for('login.login') }}" class="top-corner-link" aria-label="Voltar para o login">&larr;</a>
 
-    <header class="main-header">
+<header class="main-header">
         <div class="header-logo-container">
             <img src="{{ url_for('static', filename='logo.png') }}">
         </div>
 
         <div class="header-text">
             <h1>ESGAM</h1>
-            <p>Gestão da direção</p>
+            <p>GestÃ£o da direÃ§Ã£o</p>
         </div>
 
         <div class="header-menu">
-            <button type="button" id="menu-btn">⋮</button>
+            <button type="button" id="menu-btn">â‹®</button>
             <div id="dropdown-menu" class="dropdown-menu">
                 <button type="button" id="logout-btn">Sair</button>
             </div>
@@ -62,7 +62,7 @@
                     <h2>Carrossel Principal</h2>
 
                     <p class="card-subtitle">
-                        O carrossel possui cinco posições. Selecione apenas as imagens que pretende substituir. Os
+                        O carrossel possui cinco posiÃ§Ãµes. Selecione apenas as imagens que pretende substituir. Os
                         campos deixados em branco permanecem inalterados.
                     </p>
 
@@ -106,7 +106,7 @@
                         </div>
 
                         <button type="submit" class="btn-primary">
-                            Guardar Alterações
+                            Guardar AlteraÃ§Ãµes
                         </button>
 
                     </form>
@@ -141,7 +141,7 @@
                             <select name="status">
 
                                 <option value="info" {% if banner.status=="info" %}selected{% endif %}>
-                                    Informação
+                                    InformaÃ§Ã£o
                                 </option>
 
                                 <option value="alerta" {% if banner.status=="alerta" %}selected{% endif %}>
@@ -158,7 +158,7 @@
 
                         <div class="form-group">
 
-                            <label>Título</label>
+                            <label>TÃ­tulo</label>
 
                             <input type="text" name="titulo" value="{{ banner.titulo }}" maxlength="80" required>
 
@@ -175,7 +175,7 @@
 
                         <div class="form-group">
 
-                            <label>Texto do botão</label>
+                            <label>Texto do botÃ£o</label>
 
                             <input type="text" name="link_texto" value="{{ banner.link_texto }}" maxlength="30">
 
@@ -227,7 +227,7 @@
 
                         <button class="btn-primary">
 
-                            Atualizar Informações
+                            Atualizar InformaÃ§Ãµes
 
                         </button>
 
@@ -237,11 +237,11 @@
 
                 <section class="card">
 
-                    <h2>Publicações Oficiais</h2>
+                    <h2>PublicaÃ§Ãµes Oficiais</h2>
 
                     <p class="card-subtitle">
-                        Publique documentos oficiais como editais, listas, calendários, comunicados e outros PDFs para a
-                        página pública.
+                        Publique documentos oficiais como editais, listas, calendÃ¡rios, comunicados e outros PDFs para a
+                        pÃ¡gina pÃºblica.
                     </p>
 
                     {% with messages = get_flashed_messages(category_filter=["sucesso", "erro"]) %}
@@ -258,7 +258,7 @@
                     <form action="{{ url_for('controle.gerir_publicacoes') }}" method="POST"
                         enctype="multipart/form-data">
                         <div class="form-group">
-                            <label>Título</label>
+                            <label>TÃ­tulo</label>
                             <input type="text" name="titulo" maxlength="100" required>
                         </div>
 
@@ -268,7 +268,7 @@
                                 <option value="Turmas">Turmas</option>
                                 <option value="Edital">Edital</option>
                                 <option value="Comunicado">Comunicado</option>
-                                <option value="Calendário">Calendário</option>
+                                <option value="CalendÃ¡rio">CalendÃ¡rio</option>
                                 <option value="Concurso">Concurso</option>
                                 <option value="Outro">Outro</option>
                             </select>
@@ -276,11 +276,11 @@
 
                         <div class="form-group">
                             <label>Classe (opcional)</label>
-                            <input type="text" name="classe" placeholder="Ex: 10ª Classe">
+                            <input type="text" name="classe" placeholder="Ex: 10ª Classe" maxlength="40">
                         </div>
 
                         <div class="form-group">
-                            <label>Descrição</label>
+                            <label>DescriÃ§Ã£o</label>
                             <textarea rows="4" name="descricao" maxlength="240"></textarea>
                         </div>
 
@@ -289,17 +289,17 @@
                             <input type="file" name="arquivo" accept=".pdf" required>
                         </div>
 
-                        <button class="btn-primary">Guardar Publicação</button>
+                        <button class="btn-primary">Guardar PublicaÃ§Ã£o</button>
                     </form>
 
                     {% if publicacoes %}
                     <div style="margin-top: 24px;">
-                        <h3>Publicações ativas</h3>
+                        <h3>PublicaÃ§Ãµes ativas</h3>
                         {% for item in publicacoes %}
                         <div
                             style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; margin-bottom: 10px;">
                             <strong>{{ item.titulo }}</strong><br>
-                            <span>{{ item.categoria }}{% if item.classe %} · {{ item.classe }}{% endif %}</span>
+                            <span>{{ item.categoria }}{% if item.classe %} Â· {{ item.classe }}{% endif %}</span>
                         </div>
                         {% endfor %}
                     </div>
@@ -326,7 +326,7 @@
 
                         <div class="form-group">
 
-                            <label>Título</label>
+                            <label>TÃ­tulo</label>
 
                             <input type="text" name="titulo" value="{{ diretor.titulo }}" maxlength="80">
 
@@ -364,9 +364,9 @@
                     <h2>Comunicados</h2>
 
                     <p class="card-subtitle">
-                        Publique um comunicado. O sistema mantém automaticamente apenas os três comunicados mais
+                        Publique um comunicado. O sistema mantÃ©m automaticamente apenas os trÃªs comunicados mais
                         recentes.
-                        Cada novo comunicado passa para a 1.ª posição, deslocando os restantes para baixo.
+                        Cada novo comunicado passa para a 1.Âª posiÃ§Ã£o, deslocando os restantes para baixo.
                     </p>
 
                     {% with messages = get_flashed_messages(category_filter=["comunicado"]) %}
@@ -383,8 +383,8 @@
                     <form action="/admin/comunicado" method="POST">
 
                         <div class="form-group">
-                            <label>Título</label>
-                            <input type="text" name="titulo" maxlength="120" placeholder="Título do comunicado"
+                            <label>TÃ­tulo</label>
+                            <input type="text" name="titulo" maxlength="120" placeholder="TÃ­tulo do comunicado"
                                 required>
                         </div>
 
@@ -407,7 +407,7 @@
                     <h2>Perguntas Frequentes</h2>
 
                     <p class="card-subtitle">
-                        As três primeiras perguntas do site são permanentes. Apenas as duas perguntas adicionais podem
+                        As trÃªs primeiras perguntas do site sÃ£o permanentes. Apenas as duas perguntas adicionais podem
                         ser alteradas.
                     </p>
 
@@ -429,8 +429,8 @@
 
                         <ul style="margin-top:10px;padding-left:20px;color:#475569;line-height:1.8;">
                             <li>Como consultar as pautas do meu educando?</li>
-                            <li>Como faço a matrícula do meu educando?</li>
-                            <li>Como posso contactar a direção da escola?</li>
+                            <li>Como faÃ§o a matrÃ­cula do meu educando?</li>
+                            <li>Como posso contactar a direÃ§Ã£o da escola?</li>
                         </ul>
 
                     </div>
@@ -474,7 +474,7 @@
                         </div>
 
                         <button type="submit" class="btn-primary">
-                            Guardar Alterações
+                            Guardar AlteraÃ§Ãµes
                         </button>
 
                     </form>
@@ -483,7 +483,7 @@
 
                 <section class="card">
 
-                    <h2>Estatísticas da Página Inicial</h2>
+                    <h2>EstatÃ­sticas da PÃ¡gina Inicial</h2>
 
                     {% with messages = get_flashed_messages(category_filter=["estatisticas"]) %}
                     {% if messages %}
@@ -502,7 +502,7 @@
 
                         <fieldset style="margin-bottom:25px;padding:15px;border:1px solid #e2e8f0;border-radius:8px;">
 
-                            <legend>Estatística {{ loop.index }}</legend>
+                            <legend>EstatÃ­stica {{ loop.index }}</legend>
 
                             <input type="hidden" name="id" value="{{ stat.id }}">
 
@@ -546,7 +546,7 @@
 
                         <button class="btn-primary">
 
-                            Guardar Estatísticas
+                            Guardar EstatÃ­sticas
 
                         </button>
 
@@ -600,7 +600,7 @@
 
                 <section class="card">
 
-                    <h2>Rodapé</h2>
+                    <h2>RodapÃ©</h2>
 
                     {% with messages = get_flashed_messages(category_filter=["rodape"]) %}
                     {% if messages %}
@@ -625,7 +625,7 @@
 
                         <button class="btn-primary">
 
-                            Atualizar Rodapé
+                            Atualizar RodapÃ©
 
                         </button>
 
@@ -634,7 +634,7 @@
                 </section>
 
                 <section class="card">
-                    <h2>Publicação de Notas</h2>
+                    <h2>PublicaÃ§Ã£o de Notas</h2>
                     {% with messages = get_flashed_messages(category_filter=["pauta"]) %}
                     {% if messages %}
                     {% for mensagem in messages %}
@@ -664,7 +664,7 @@
 
                     <hr style="margin: 30px 0; border: none; border-top: 1px solid #e2e8f0;">
 
-                    <h2>Publicação de Pautas</h2>
+                    <h2>PublicaÃ§Ã£o de Pautas</h2>
 
                     <form action="/admin/upload-pauta" method="POST" enctype="multipart/form-data"
                         onsubmit="return confirm('Tens certeza que queres publicar este(s) ficheiro(s) de turmas?')">
@@ -721,7 +721,7 @@
                 </section>
 
                 <section class="card">
-                    <h2>Gestão de Grupos</h2>
+                    <h2>GestÃ£o de Grupos</h2>
 
                     {% with messages = get_flashed_messages(category_filter=["grupo"]) %}
                     {% if messages %}
@@ -740,9 +740,9 @@
                             <label for="classeGrupo">Classe</label>
                             <select id="classe-grupo" name="classe" required>
                                 <option value="">Selecionar</option>
-                                <option value="10">10ª Classe</option>
-                                <option value="11">11ª Classe</option>
-                                <option value="12">12ª Classe</option>
+                                <option value="10">10Âª Classe</option>
+                                <option value="11">11Âª Classe</option>
+                                <option value="12">12Âª Classe</option>
                             </select>
                         </div>
 
@@ -766,12 +766,12 @@
                 </section>
 
                 <section class="card">
-                    <h2>Gestão de Alunos</h2>
+                    <h2>GestÃ£o de Alunos</h2>
 
                     <div class="vertical-actions">
 
                         <a href="{{ url_for('visao_geral.central_verificacao') }}" class="btn btn-primary">
-                            Visão Geral
+                            VisÃ£o Geral
                         </a>
 
                         <a href="{{ url_for('registar_aluno.pagina_registar_aluno') }}" class="btn btn-primary">
@@ -788,7 +788,7 @@
                 </section>
 
                 <section class="card">
-                    <h2>Operações em Massa</h2>
+                    <h2>OperaÃ§Ãµes em Massa</h2>
 
                     {% with messages = get_flashed_messages(category_filter=["eliminar"]) %}
                     {% if messages %}
@@ -802,7 +802,7 @@
                     {% endwith %}
 
                     <p class="card-subtitle">
-                        Elimine classes, grupos ou turmas usando um único campo. Os dados vão para a
+                        Elimine classes, grupos ou turmas usando um Ãºnico campo. Os dados vÃ£o para a
                         lixeira e podem ser restaurados durante 10 dias.
                     </p>
 
@@ -823,7 +823,7 @@
                 </section>
 
                 <section class="card">
-                    <h2>Lixeira Temporária</h2>
+                    <h2>Lixeira TemporÃ¡ria</h2>
 
                     <p class="card-subtitle">
                         Consulte, pesquise e restaure registos eliminados temporariamente.
@@ -840,11 +840,11 @@
 
             <section class="card">
 
-                <h2>Validação Inteligente</h2>
+                <h2>ValidaÃ§Ã£o Inteligente</h2>
 
                 <p class="card-subtitle">
-                    O sistema valida automaticamente todos os ficheiros recebidos e importa apenas os que não apresentam
-                    conflitos. Apenas as situações que exigem intervenção da direção são apresentadas abaixo.
+                    O sistema valida automaticamente todos os ficheiros recebidos e importa apenas os que nÃ£o apresentam
+                    conflitos. Apenas as situaÃ§Ãµes que exigem intervenÃ§Ã£o da direÃ§Ã£o sÃ£o apresentadas abaixo.
                 </p>
 
                 <div class="top-grid">
@@ -870,7 +870,7 @@
                             {{ pendencias|length }}
                         </div>
 
-                        <span>Pendências</span>
+                        <span>PendÃªncias</span>
                     </div>
 
                 </div>
@@ -878,7 +878,7 @@
                 {% if pendencias %}
 
                 <h3 style="margin-top:30px;">
-                    Pendências que necessitam de confirmação
+                    PendÃªncias que necessitam de confirmaÃ§Ã£o
                 </h3>
 
                 {% for erro in pendencias %}
@@ -905,7 +905,7 @@
 
                         &nbsp;|&nbsp;
 
-                        <strong>Período:</strong> {{ erro.periodo }}
+                        <strong>PerÃ­odo:</strong> {{ erro.periodo }}
 
                         {% endif %}
 
@@ -927,8 +927,8 @@
 
                         <p>
 
-                            Já existe uma pauta publicada para esta turma.
-                            Confirme se pretende substituir a versão atualmente armazenada.
+                            JÃ¡ existe uma pauta publicada para esta turma.
+                            Confirme se pretende substituir a versÃ£o atualmente armazenada.
 
                         </p>
 
@@ -971,8 +971,8 @@
 
                         <p>
 
-                            O sistema encontrou um aluno com nome semelhante, mas não conseguiu confirmar a identidade
-                            com segurança.
+                            O sistema encontrou um aluno com nome semelhante, mas nÃ£o conseguiu confirmar a identidade
+                            com seguranÃ§a.
 
                         </p>
 
@@ -1031,7 +1031,7 @@
 
                         <p>
 
-                            Este aluno não existe na base de dados da escola.
+                            Este aluno nÃ£o existe na base de dados da escola.
 
                         </p>
 
@@ -1061,7 +1061,7 @@
 
                     <span>
 
-                        Todas as pautas foram validadas, importadas e verificadas com sucesso. Não existem pendências.
+                        Todas as pautas foram validadas, importadas e verificadas com sucesso. NÃ£o existem pendÃªncias.
 
                     </span>
 
@@ -1075,12 +1075,18 @@
 
         <footer class="main-footer">
             <p>
-                &copy; Escola Secundária Geral de Alto Molócuè. Todos os direitos reservados.
+                &copy; Escola SecundÃ¡ria Geral de Alto MolÃ³cuÃ¨. Todos os direitos reservados.
             </p>
         </footer>
 
     </main>
 
+    <script src="{{ url_for('static', filename='login.js') }}"></script>
 </body>
 
 </html>
+
+
+
+
+

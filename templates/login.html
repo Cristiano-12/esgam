@@ -12,6 +12,8 @@
 
 <body>
 
+    <a href="{{ url_for('index.pagina_inicial') }}" class="top-corner-link" aria-label="Voltar para a página inicial">←</a>
+
     <header class="main-header">
         <img
             src="{{ url_for('static', filename='logo.png') }}"
@@ -64,8 +66,7 @@
                         placeholder="Ex.: 202610045"
                         autocomplete="username"
                         maxlength="20"
-                        required
-                        autofocus>
+                        required>
 
                 </div>
 

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-PT">
 
 <head>
@@ -11,7 +11,7 @@
 </head>
 
 <body>
-    <a href="#" class="top-corner-link" data-back-one aria-label="Voltar uma página">←</a>
+    <a href="{{ url_for('login.login') }}" class="top-corner-link" aria-label="Voltar para o login">&larr;</a>
 
     <header class="main-header">
         <div class="header-logo-container">
@@ -20,11 +20,11 @@
 
         <div class="header-text">
             <h1>ESGAM</h1>
-            <p>Portal académico do estudante</p>
+            <p>Portal acadÃ©mico do estudante</p>
         </div>
 
         <div class="header-menu">
-            <button type="button" id="menu-btn">⋮</button>
+            <button type="button" id="menu-btn">â‹®</button>
             <div id="dropdown-menu" class="dropdown-menu" hidden>
                 <button type="button" id="logout-btn">Sair</button>
             </div>
@@ -45,7 +45,7 @@
             </section>
 
             <section class="card final-average-box">
-                <h2>Média final</h2>
+                <h2>MÃ©dia final</h2>
                 <div class="final-score">
                     {{ aluno.media_geral }}
                 </div>
@@ -60,7 +60,7 @@
         </div>
 
         <section class="card grades-card">
-            <h2>Pauta de avaliações trimestrais</h2>
+            <h2>Pauta de avaliaÃ§Ãµes trimestrais</h2>
             <div class="table-container">
                 <table>
                     <thead>
@@ -68,13 +68,13 @@
                             <th rowspan="2">Disciplina</th>
 
                             <th colspan="5" class="trimestre-sep">
-                                1º Trimestre
+                                1Âº Trimestre
                             </th>
                             <th colspan="5" class="trimestre-sep">
-                                2º Trimestre
+                                2Âº Trimestre
                             </th>
                             <th colspan="5" class="trimestre-sep">
-                                3º Trimestre
+                                3Âº Trimestre
                             </th>
 
                             {% if aluno.classe == "12" %}
@@ -111,7 +111,7 @@
                         <tr>
                             <td class="subject-name">{{ linha.nome }}</td>
 
-                            <!-- 1º Trimestre -->
+                            <!-- 1Âº Trimestre -->
                             <td class="trimestre-sep">{{ linha.t1_p1 }}</td>
                             <td>{{ linha.t1_p2 }}</td>
                             <td>{{ linha.t1_p3 }}</td>
@@ -121,7 +121,7 @@
                                 <strong>{{ linha.mf1 }}</strong>
                             </td>
 
-                            <!-- 2º Trimestre -->
+                            <!-- 2Âº Trimestre -->
                             <td class="trimestre-sep">{{ linha.t2_p1 }}</td>
                             <td>{{ linha.t2_p2 }}</td>
                             <td>{{ linha.t2_p3 }}</td>
@@ -132,7 +132,7 @@
                                 <strong>{{ linha.mf2 }}</strong>
                             </td>
 
-                            <!-- 3º Trimestre -->
+                            <!-- 3Âº Trimestre -->
                             <td class="trimestre-sep">{{ linha.t3_p1 }}</td>
                             <td>{{ linha.t3_p2 }}</td>
                             <td>{{ linha.t3_p3 }}</td>
@@ -159,7 +159,7 @@
 
                         <tr>
                             <td colspan="17" style="text-align: center; padding: 20px;">
-                                Nenhuma avaliação disponível.
+                                Nenhuma avaliaÃ§Ã£o disponÃ­vel.
                             </td>
                         </tr>
 
@@ -174,17 +174,17 @@
 
         <section class="card info-list">
 
-            <h2>Informações</h2>
+            <h2>InformaÃ§Ãµes</h2>
 
             <ul>
 
                 <li>
-                    Este documento reflete as avaliações oficiais registadas no sistema interno da escola.
+                    Este documento reflete as avaliaÃ§Ãµes oficiais registadas no sistema interno da escola.
                 </li>
 
                 {% if aviso_painel %}
                 <li>
-                    <strong>Aviso da Direção:</strong>
+                    <strong>Aviso da DireÃ§Ã£o:</strong>
                     {{ aviso_painel }}
                 </li>
                 {% endif %}
@@ -197,7 +197,7 @@
 
     <footer class="main-footer">
         <p>
-            &copy; Escola Secundária Geral de Alto Molócuè. Todos os direitos reservados.
+            &copy; Escola SecundÃ¡ria Geral de Alto MolÃ³cuÃ¨. Todos os direitos reservados.
         </p>
     </footer>
 
@@ -206,3 +206,4 @@
 </body>
 
 </html>
+

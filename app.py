@@ -1,7 +1,6 @@
 import os
 import secrets
 
-from dotenv import load_dotenv
 from flask import Flask, render_template, send_from_directory
 from jinja2 import TemplateNotFound
 from sqlalchemy.engine import URL
@@ -10,7 +9,13 @@ from werkzeug.security import generate_password_hash
 from models import Utilizador, db
 
 
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+except ModuleNotFoundError:
+    load_dotenv = None
+
+if load_dotenv:
+    load_dotenv()
 
 
 # ==========================================
@@ -59,7 +64,7 @@ def create_app():
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["SQLALCHEMY_DATABASE_URI"] = _build_database_uri()
 
-    db_uri = app.config["SQLALCHEMY_DATABASE_URI"]
+    db_uri = str(app.config["SQLALCHEMY_DATABASE_URI"])
     if db_uri.startswith("postgresql"):
         app.logger.info("Base de dados em uso: PostgreSQL (Supabase)")
     else:

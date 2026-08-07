@@ -1,25 +1,25 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-PT">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registar Aluno - ESGAM</title>
-    <!-- Ficheiro CSS estático via url_for -->
+    <!-- Ficheiro CSS estÃ¡tico via url_for -->
     <link rel="stylesheet" href="{{ url_for('static', filename='controle.css') }}">
 </head>
 
 <body>
-    <a href="{{ url_for('login.logout') }}" class="top-corner-link" aria-label="Sair da conta">←</a>
+    <a href="{{ url_for('controle.central_verificacao') }}" class="top-corner-link" aria-label="Voltar para o controlo">&larr;</a>
     <main class="dashboard">
 
         <section class="card" style="max-width: 500px; margin: 40px auto;">
             <h2>Registar Novo Aluno</h2>
             <p class="card-subtitle">
-                Insira os dados do estudante. O ID será gerado de forma automática pelo sistema.
+                Insira os dados do estudante. O ID serÃ¡ gerado de forma automÃ¡tica pelo sistema.
             </p>
 
-            <!-- Rota Flask para submeter o formulário -->
+            <!-- Rota Flask para submeter o formulÃ¡rio -->
             <form id="reg-form" action="{{ url_for('registar_aluno.salvar_aluno') }}" method="POST">
 
                 <div class="form-group">
@@ -31,9 +31,9 @@
                     <label for="classe-aluno">Classe</label>
                     <select name="classe" id="classe-aluno" required>
                         <option value="">Selecionar Classe</option>
-                        <option value="10">10ª classe</option>
-                        <option value="11">11ª classe</option>
-                        <option value="12">12ª classe</option>
+                        <option value="10">10Âª classe</option>
+                        <option value="11">11Âª classe</option>
+                        <option value="12">12Âª classe</option>
                     </select>
                 </div>
 
@@ -57,12 +57,12 @@
                     </select>
                 </div>
 
-                <!-- O bloco só aparece se o Flask retornar um id_gerado -->
+                <!-- O bloco sÃ³ aparece se o Flask retornar um id_gerado -->
                 {% if id_gerado %}
                 <div id="id-bloco" class="form-group">
                     <label for="id-gerado">ID Gerado</label>
                     <p class="card-subtitle" style="margin-bottom:10px;">
-                        Guarde este ID. Ele será utilizado pelo estudante para aceder ao portal.
+                        Guarde este ID. Ele serÃ¡ utilizado pelo estudante para aceder ao portal.
                     </p>
                     <div style="display:flex; gap:10px;">
                         <input type="text" id="id-gerado" value="{{ id_gerado }}" readonly
@@ -86,7 +86,7 @@
                 </div>
             </form>
 
-            <!-- Suporte dinâmico para mensagens Flash do Flask -->
+            <!-- Suporte dinÃ¢mico para mensagens Flash do Flask -->
             {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
             {% for category, message in messages %}
@@ -96,7 +96,7 @@
                     {{ message }}
                 </span>
                 <button class="flash-close" onclick="this.parentElement.style.display='none';" aria-label="Fechar"
-                    style="background:none; border:none; cursor:pointer; font-size: 18px;">×</button>
+                    style="background:none; border:none; cursor:pointer; font-size: 18px;">Ã—</button>
             </div>
             {% endfor %}
             {% endif %}
@@ -108,3 +108,4 @@
 </body>
 
 </html>
+
