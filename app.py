@@ -37,6 +37,11 @@ def _build_database_uri() -> str:
         )
 
     if os.getenv("VERCEL"):
+        print(
+            "AVISO: DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASSWORD não estão todas "
+            "definidas nas variáveis de ambiente do Vercel — a app vai usar SQLite "
+            "temporário em /tmp, cujos dados NÃO persistem entre execuções."
+        )
         return "sqlite:////tmp/esgam.db"
 
     return "sqlite:///esgam.db"
@@ -53,6 +58,12 @@ def create_app():
     app.config["SECRET_KEY"] = secret_key
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["SQLALCHEMY_DATABASE_URI"] = _build_database_uri()
+
+    db_uri = app.config["SQLALCHEMY_DATABASE_URI"]
+    if db_uri.startswith("postgresql"):
+        app.logger.info("Base de dados em uso: PostgreSQL (Supabase)")
+    else:
+        app.logger.warning("Base de dados em uso: %s", db_uri)
 
     # ==========================================
     # Base de Dados
@@ -136,8 +147,8 @@ def create_app():
                 if not admin:
                     db.session.add(
                         Utilizador(
-                            username="admin",
-                            password=generate_password_hash("1234"),
+                            username="123456",
+                            password=generate_password_hash("654321"),
                             nome="Administrador",
                             role="admin",
                             ativo=True,

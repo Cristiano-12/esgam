@@ -250,9 +250,15 @@ def gerir_publicacoes():
 
         nome_arquivo = secure_filename(arquivo.filename) or 'documento.pdf'
         pasta_destino = os.path.join('static', 'uploads', 'publicacoes')
-        os.makedirs(pasta_destino, exist_ok=True)
-        caminho = os.path.join(pasta_destino, nome_arquivo)
-        arquivo.save(caminho)
+
+        try:
+            os.makedirs(pasta_destino, exist_ok=True)
+            caminho = os.path.join(pasta_destino, nome_arquivo)
+            arquivo.save(caminho)
+        except OSError:
+            logging.exception("Erro ao guardar PDF de publicação '%s'.", nome_arquivo)
+            flash('Não foi possível guardar o ficheiro PDF neste servidor. Tenta novamente ou contacta o suporte.', 'erro')
+            return redirect(url_for('controle.central_verificacao'))
 
         publicacao = Publicacao(
             titulo=titulo,
@@ -275,10 +281,15 @@ def _guardar_ficheiro(campo_nome, subpasta='uploads'):
     if arquivo and arquivo.filename:
         nome_arquivo = secure_filename(arquivo.filename)
         pasta_destino = os.path.join('static', subpasta)
-        os.makedirs(pasta_destino, exist_ok=True)
-        caminho = os.path.join(pasta_destino, nome_arquivo)
-        arquivo.save(caminho)
-        return nome_arquivo
+        try:
+            os.makedirs(pasta_destino, exist_ok=True)
+            caminho = os.path.join(pasta_destino, nome_arquivo)
+            arquivo.save(caminho)
+            return nome_arquivo
+        except OSError:
+            logging.exception("Erro ao guardar ficheiro '%s' em '%s'.", nome_arquivo, pasta_destino)
+            flash('Não foi possível guardar a imagem neste servidor. As restantes alterações foram guardadas.', 'erro')
+            return None
     return None
 
 
