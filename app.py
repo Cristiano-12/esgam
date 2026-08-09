@@ -27,6 +27,7 @@ def _build_database_uri() -> str:
     db_name = os.getenv("DB_NAME", "").strip()
     db_user = os.getenv("DB_USER", "").strip()
     db_password = os.getenv("DB_PASSWORD", "").strip()
+    db_supabase = os.getenv("DB_SUPABASE", "").strip()
 
     if db_port and not db_port.isdigit():
         raise RuntimeError("DB_PORT inválida.")

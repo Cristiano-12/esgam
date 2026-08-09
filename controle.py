@@ -34,6 +34,11 @@ from models import (
     Publicacao
 )
 
+try:
+    from openpyxl import load_workbook
+except ModuleNotFoundError:
+    load_workbook = None
+
 controle_bp = Blueprint("controle", __name__)
 
 
@@ -293,6 +298,38 @@ def _guardar_ficheiro(campo_nome, subpasta='uploads'):
     return None
 
 
+def _extension_excel(nome_arquivo):
+    return os.path.splitext(nome_arquivo.lower())[1] in {".xlsx", ".xls"}
+
+
+def _guardar_upload_excel(arquivo, subpasta="pautas"):
+    if not arquivo or not arquivo.filename:
+        return None, "Ficheiro inválido."
+
+    nome_arquivo = secure_filename(arquivo.filename)
+    if not _extension_excel(nome_arquivo):
+        return None, "Apenas ficheiros Excel (.xlsx ou .xls) são aceites."
+
+    pasta_destino = os.path.join("static", "uploads", subpasta)
+    try:
+        os.makedirs(pasta_destino, exist_ok=True)
+        caminho = os.path.join(pasta_destino, nome_arquivo)
+        arquivo.save(caminho)
+        return nome_arquivo, None
+    except OSError:
+        logging.exception("Erro ao guardar ficheiro Excel '%s'.", nome_arquivo)
+        return None, "Não foi possível guardar o ficheiro Excel neste servidor."
+
+
+def _subpasta_para_tipo_pauta(tipo_pauta):
+    tipo = (tipo_pauta or "").strip().lower()
+    if tipo == "notas":
+        return "controle"
+    if tipo == "turmas":
+        return "pautas"
+    return "pautas"
+
+
 @controle_bp.route('/admin/banner', methods=['POST'])
 @login_required
 def atualizar_banner():
@@ -486,6 +523,57 @@ def publicar_aviso():
     except Exception as e:
         db.session.rollback()
         flash(f'Erro ao publicar aviso: {str(e)}', 'aviso')
+
+    return redirect(url_for('controle.central_verificacao'))
+
+
+@controle_bp.route('/admin/upload-pauta', methods=['POST'])
+@login_required
+def upload_pauta():
+    tipo_pauta = request.form.get('tipo_pauta', '').strip() or 'turmas'
+    ficheiros = request.files.getlist('arquivo_pauta')
+    subpasta = _subpasta_para_tipo_pauta(tipo_pauta)
+
+    if not ficheiros:
+        flash('Seleciona pelo menos um ficheiro Excel.', 'pauta')
+        return redirect(url_for('controle.central_verificacao'))
+
+    recebidos = 0
+    guardados = 0
+
+    for arquivo in ficheiros:
+        if not arquivo or not arquivo.filename:
+            continue
+
+        recebidos += 1
+        nome_arquivo, erro = _guardar_upload_excel(arquivo, subpasta=subpasta)
+        if erro:
+            flash(erro, 'pauta')
+            continue
+
+        guardados += 1
+        pendencia = PendenciaPauta(
+            arquivo=nome_arquivo,
+            classe=tipo_pauta if tipo_pauta != 'notas' else 'controle',
+            turma=None,
+            grupo=None,
+            periodo=None,
+            tipo=tipo_pauta,
+            descricao=f'Ficheiro Excel recebido para validação. Pasta: {subpasta}.',
+            nome_excel=nome_arquivo,
+            status='pendente',
+        )
+        db.session.add(pendencia)
+
+    if guardados:
+        try:
+            db.session.commit()
+            flash(f'{guardados} ficheiro(s) Excel recebido(s) com sucesso.', 'pauta')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao registar a pauta recebida: {str(e)}', 'pauta')
+    else:
+        flash('Nenhum ficheiro Excel válido foi enviado.', 'pauta')
 
     return redirect(url_for('controle.central_verificacao'))
 
