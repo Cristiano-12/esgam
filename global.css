@@ -15,7 +15,10 @@ html {
 body {
     min-height: 100vh;
     font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: #fafafa;
+    background:
+        radial-gradient(circle at top left, rgb(47 111 165 / 7%), transparent 28%),
+        radial-gradient(circle at bottom right, rgb(183 137 63 / 7%), transparent 22%),
+        linear-gradient(180deg, #fbfcfe 0%, #f5f8fc 100%);
     color: #0c1722;
     display: flex;
     flex-direction: column;
@@ -66,6 +69,93 @@ main:not(.dashboard) {
 
 .main-footer p {
     margin: 0;
+}
+
+.surface-card {
+    background: rgb(255 255 255 / 92%);
+    border: 1px solid rgb(226 232 240 / 90%);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgb(15 23 42 / 7%);
+    backdrop-filter: blur(10px);
+}
+
+.section-shell {
+    padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.top-corner-link {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  width: auto;
+  height: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+  color: #64748b;
+  box-shadow: none;
+  font-size: 1.65rem;
+  font-weight: 400;
+  z-index: 5;
+  text-decoration: none;
+  padding: 0;
+}
+
+.top-corner-link:hover {
+  transform: translateX(-2px);
+  background: transparent;
+  color: #475569;
+}
+
+.top-corner-link::after {
+  content: "";
+}
+
+.btn-back {
+  padding: 10px 18px !important;
+  border-radius: 999px;
+  font-size: .92rem;
+}
+
+.top-corner-link:focus-visible {
+  outline-offset: 4px;
+}
+
+.publication-summary-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.publication-summary-title {
+  color: #0f172a;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.publication-summary-meta {
+  color: #64748b;
+  font-size: .92rem;
+  overflow-wrap: anywhere;
+}
+
+.char-counter {
+  margin-top: .35rem;
+  font-size: .75rem;
+  color: #94a3b8;
+  text-align: right;
+}
+
+.char-counter.is-warning {
+  color: #b45309;
 }
 
 /* ===================================

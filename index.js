@@ -102,6 +102,7 @@
  
     const SLIDE_DURATION = 3500; // ms — deve bater com a animação do .progress-bar no CSS
     let autoplayTimer = null;
+    let autoplayPaused = false;
  
     function goToSlide(index) {
       if (!slides.length) return;
@@ -128,11 +129,26 @@
       goToSlide(current - 1);
     }
  
-    function restartAutoplay() {
-      if (autoplayTimer) clearInterval(autoplayTimer);
-      if (slides.length > 1) {
-        autoplayTimer = setInterval(nextSlide, SLIDE_DURATION);
+    function stopAutoplay() {
+      if (autoplayTimer) {
+        clearTimeout(autoplayTimer);
+        autoplayTimer = null;
       }
+    }
+
+    function scheduleAutoplay() {
+      stopAutoplay();
+      if (slides.length > 1 && !autoplayPaused) {
+        autoplayTimer = setTimeout(() => {
+          nextSlide();
+          scheduleAutoplay();
+        }, SLIDE_DURATION);
+      }
+    }
+
+    function restartAutoplay() {
+      autoplayPaused = false;
+      scheduleAutoplay();
     }
  
     nextBtn?.addEventListener('click', () => goToSlide(current + 1));
@@ -145,9 +161,13 @@
     // Pausa o autoplay quando o rato está sobre o carrossel
     const heroSection = document.getElementById('top');
     heroSection?.addEventListener('mouseenter', () => {
-      if (autoplayTimer) clearInterval(autoplayTimer);
+      autoplayPaused = true;
+      stopAutoplay();
     });
-    heroSection?.addEventListener('mouseleave', restartAutoplay);
+    heroSection?.addEventListener('mouseleave', () => {
+      autoplayPaused = false;
+      scheduleAutoplay();
+    });
  
     // Suporte a gesto de arrastar (swipe) em ecrãs táteis
     let touchStartX = 0;
@@ -172,7 +192,7 @@
     // Pausa quando a aba não está visível, para poupar recursos
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
-        if (autoplayTimer) clearInterval(autoplayTimer);
+        stopAutoplay();
       } else {
         restartAutoplay();
       }

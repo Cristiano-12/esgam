@@ -8,6 +8,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const dropdownMenu = document.getElementById('dropdown-menu');
     const logoutBtn = document.getElementById('logout-btn');
 
+    if (loginForm) {
+        loginForm.reset();
+    }
+
+    if (studentIDInput) {
+        studentIDInput.value = '';
+    }
+
+    if (passwordInput) {
+        passwordInput.value = '';
+    }
+
     const eyeOpenSVG = `
     <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0z"></path>
     <circle cx="12" cy="12" r="3"></circle>
@@ -31,15 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (menuBtn && dropdownMenu) {
         menuBtn.addEventListener('click', (event) => {
             event.stopPropagation();
-            dropdownMenu.classList.toggle('show');
-        });
-
-        document.addEventListener('click', () => {
-            dropdownMenu.classList.remove('show');
-        });
-
-        dropdownMenu.addEventListener('click', (event) => {
-            event.stopPropagation();
+            window.location.href = '/logout';
         });
     }
 
@@ -48,4 +52,26 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = '/logout';
         });
     }
+
+    document.querySelectorAll('[maxlength]').forEach((field) => {
+        const wrapper = field.closest('.input-field, .form-group');
+        if (!wrapper) return;
+
+        const maxLength = Number(field.getAttribute('maxlength'));
+        if (!maxLength) return;
+
+        const counter = document.createElement('div');
+        counter.className = 'char-counter';
+        counter.setAttribute('aria-live', 'polite');
+        wrapper.appendChild(counter);
+
+        const updateCounter = () => {
+            const current = field.value.length;
+            counter.textContent = `${current}/${maxLength}`;
+            counter.classList.toggle('is-warning', current >= maxLength * 0.9);
+        };
+
+        field.addEventListener('input', updateCounter);
+        updateCounter();
+    });
 });
