@@ -1,5 +1,6 @@
 import logging
 import os
+import requests
 from datetime import datetime
 from functools import wraps
 from werkzeug.utils import secure_filename
@@ -109,6 +110,7 @@ def obter_banner():
             return banner
     except Exception:
         logging.exception("Erro ao carregar banner.")
+        db.session.rollback()
 
     return BannerFake()
 
@@ -118,6 +120,7 @@ def obter_carrossel():
         return Carrossel.query.filter_by(ativo=True).order_by(Carrossel.ordem).all()
     except Exception:
         logging.exception("Erro ao carregar carrossel.")
+        db.session.rollback()
         return []
 
 
@@ -126,6 +129,7 @@ def obter_estatisticas():
         try:
             return modelo.query.count()
         except Exception:
+            db.session.rollback()
             return 0
 
     return [
@@ -141,6 +145,7 @@ def obter_comunicados():
         return Comunicado.query.order_by(Comunicado.data.desc()).limit(1).all()
     except Exception:
         logging.exception("Erro ao carregar comunicados.")
+        db.session.rollback()
         return []
 
 
@@ -149,6 +154,7 @@ def obter_faq():
         return FAQ.query.order_by(FAQ.id.desc()).limit(1).all()
     except Exception:
         logging.exception("Erro ao carregar FAQ.")
+        db.session.rollback()
         return []
 
 
@@ -159,6 +165,7 @@ def obter_sobre():
             return sobre
     except Exception:
         logging.exception("Erro ao carregar Sobre.")
+        db.session.rollback()
 
     return SobreFake()
 
@@ -170,6 +177,7 @@ def obter_diretor():
             return diretor
     except Exception:
         logging.exception("Erro ao carregar Diretor.")
+        db.session.rollback()
 
     return DiretorFake()
 
@@ -181,6 +189,7 @@ def obter_contacto():
             return contacto
     except Exception:
         logging.exception("Erro ao carregar contacto.")
+        db.session.rollback()
 
     return ContactoFake()
 
@@ -249,20 +258,12 @@ def gerir_publicacoes():
         classe = request.form.get('classe', '').strip()
         arquivo = request.files.get('arquivo')
 
-        if not titulo or not arquivo:
+        if not titulo or not arquivo or not arquivo.filename:
             flash('Título e PDF são obrigatórios.', 'erro')
             return redirect(url_for('controle.central_verificacao'))
 
-        nome_arquivo = secure_filename(arquivo.filename) or 'documento.pdf'
-        pasta_destino = os.path.join('static', 'uploads', 'publicacoes')
-
-        try:
-            os.makedirs(pasta_destino, exist_ok=True)
-            caminho = os.path.join(pasta_destino, nome_arquivo)
-            arquivo.save(caminho)
-        except OSError:
-            logging.exception("Erro ao guardar PDF de publicação '%s'.", nome_arquivo)
-            flash('Não foi possível guardar o ficheiro PDF neste servidor. Tenta novamente ou contacta o suporte.', 'erro')
+        url_arquivo = _guardar_ficheiro('arquivo', subpasta='publicacoes')
+        if not url_arquivo:
             return redirect(url_for('controle.central_verificacao'))
 
         publicacao = Publicacao(
@@ -270,7 +271,7 @@ def gerir_publicacoes():
             categoria=categoria or 'Outro',
             descricao=descricao or None,
             classe=classe or None,
-            arquivo=nome_arquivo,
+            arquivo=url_arquivo,
             ativo=True
         )
         db.session.add(publicacao)
@@ -280,22 +281,49 @@ def gerir_publicacoes():
     return redirect(url_for('controle.central_verificacao'))
 
 
-def _guardar_ficheiro(campo_nome, subpasta='uploads'):
-    """Guarda um ficheiro enviado por upload e devolve o nome do ficheiro, ou None."""
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://gmiwrafjeqpixesqvuxe.supabase.co").rstrip("/")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
+SUPABASE_BUCKET = "uploads"
+
+
+def _guardar_ficheiro(campo_nome, subpasta=''):
+    """Envia um ficheiro para o Supabase Storage e devolve o URL público, ou None."""
     arquivo = request.files.get(campo_nome)
-    if arquivo and arquivo.filename:
-        nome_arquivo = secure_filename(arquivo.filename)
-        pasta_destino = os.path.join('static', subpasta)
-        try:
-            os.makedirs(pasta_destino, exist_ok=True)
-            caminho = os.path.join(pasta_destino, nome_arquivo)
-            arquivo.save(caminho)
-            return nome_arquivo
-        except OSError:
-            logging.exception("Erro ao guardar ficheiro '%s' em '%s'.", nome_arquivo, pasta_destino)
-            flash('Não foi possível guardar a imagem neste servidor. As restantes alterações foram guardadas.', 'erro')
+    if not (arquivo and arquivo.filename):
+        return None
+
+    if not SUPABASE_KEY:
+        logging.error("SUPABASE_KEY não está definida — não é possível enviar ficheiros.")
+        flash('Configuração de armazenamento em falta. Contacte o suporte técnico.', 'erro')
+        return None
+
+    nome_arquivo = secure_filename(arquivo.filename)
+    caminho_storage = f"{subpasta}/{nome_arquivo}" if subpasta else nome_arquivo
+
+    conteudo = arquivo.read()
+    tipo_mime = arquivo.mimetype or 'application/octet-stream'
+
+    url_upload = f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/{caminho_storage}"
+    headers = {
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "apikey": SUPABASE_KEY,
+        "Content-Type": tipo_mime,
+        "x-upsert": "true",  # substitui o ficheiro se já existir com o mesmo nome
+    }
+
+    try:
+        resposta = requests.put(url_upload, headers=headers, data=conteudo, timeout=30)
+        if resposta.status_code not in (200, 201):
+            logging.error("Erro ao enviar '%s' para o Supabase Storage: %s - %s",
+                          nome_arquivo, resposta.status_code, resposta.text)
+            flash('Não foi possível guardar a imagem. As restantes alterações foram guardadas.', 'erro')
             return None
-    return None
+    except requests.RequestException:
+        logging.exception("Erro de rede ao enviar '%s' para o Supabase Storage.", nome_arquivo)
+        flash('Não foi possível guardar a imagem (erro de rede). As restantes alterações foram guardadas.', 'erro')
+        return None
+
+    return f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/{caminho_storage}"
 
 
 def _extension_excel(nome_arquivo):
@@ -854,6 +882,7 @@ def carregar_portal(student_id):
                 aviso_mensagem = getattr(aviso, 'mensagem', None) or getattr(aviso, 'texto', None)
         except Exception:
             logging.warning("Modelo Aviso não encontrado ou erro na consulta de aviso ativo.")
+            db.session.rollback()
 
         return {
             "aluno": aluno,
@@ -863,6 +892,7 @@ def carregar_portal(student_id):
 
     except Exception as e:
         logging.exception("Erro ao carregar o portal do estudante.")
+        db.session.rollback()
 
         return {
             "aluno": {"classe": "0"},

@@ -65,6 +65,15 @@ def create_app():
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["SQLALCHEMY_DATABASE_URI"] = _build_database_uri()
 
+    # O Supabase "Transaction Pooler" (porta 6543) fecha ligações inativas com frequência.
+    # Sem isto, o SQLAlchemy tenta reutilizar ligações já mortas pelo pooler, causando
+    # "server closed the connection unexpectedly" em cascata. pool_pre_ping testa a ligação
+    # antes de a usar; pool_recycle substitui ligações antes do pooler as fechar sozinho.
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_pre_ping": True,
+        "pool_recycle": 280,
+    }
+
     db_uri = str(app.config["SQLALCHEMY_DATABASE_URI"])
     if db_uri.startswith("postgresql"):
         app.logger.info("Base de dados em uso: PostgreSQL (Supabase)")
