@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Publicações - ESGAM</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='controle.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='global.css') }}">
+</head>
+
+<body>
+    <header class="main-header">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo da ESGAM" class="logo">
+    </header>
+
+    <main class="dashboard">
+        <div class="form-container">
+            <header class="consulta-header">
+                <h2>Publicações</h2>
+                <p class="card-subtitle">
+                    Consulte os documentos oficiais publicados pela Escola Secundária Geral de Alto Molócuè.
+                    Os conteúdos são disponibilizados em PDF e organizados por categoria.
+                </p>
+            </header>
+
+            {% if modo_pauta_aberto %}
+            <section class="card" style="background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);">
+                <h2 style="margin-bottom: 8px;">Centro de Publicações</h2>
+                <p class="card-subtitle">
+                    Aqui ficam disponíveis editais, listas, pautas públicas, calendários, comunicados e outros
+                    documentos oficiais.
+                </p>
+            </section>
+
+            {% if publicacoes %}
+            <div style="margin-top: 24px; display: grid; gap: 16px;">
+                {% for item in publicacoes %}
+                <section class="card publicacao-card">
+                    <div class="publicacao-conteudo">
+                        <div class="publicacao-categoria">
+                            {{ item.categoria or 'Outro' }}
+                        </div>
+                        <h3 class="publicacao-titulo">{{ item.titulo }}</h3>
+                        {% if item.classe %}
+                        <p class="publicacao-meta">Classe: {{ item.classe }}</p>
+                        {% endif %}
+                        {% if item.descricao %}
+                        <p class="publicacao-descricao">{{ item.descricao }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="publicacao-acoes">
+                        <div class="publicacao-data">
+                            {{ item.data_publicacao.strftime('%d/%m/%Y') if item.data_publicacao else 'Sem data' }}
+                        </div>
+                        <a href="{{ url_for('static', filename='uploads/publicacoes/' + item.arquivo) }}"
+                            target="_blank" class="btn-primary publicacao-botao">
+                            Visualizar PDF
+                        </a>
+                    </div>
+                </section>
+                {% endfor %}
+            </div>
+            {% else %}
+            <section class="card" style="text-align: center; margin-top: 24px;">
+                <h2>Ainda não existem publicações oficiais</h2>
+                <p class="card-subtitle">
+                    Quando a escola publicar documentos oficiais, eles aparecerão aqui automaticamente.
+                </p>
+            </section>
+            {% endif %}
+            {% else %}
+            <section class="card" style="text-align: center;">
+                <h2>Consulta pública encerrada</h2>
+                <p class="card-subtitle">
+                    As publicações oficiais estão encerradas neste momento.
+                    Utilize o portal do aluno para consultar informações académicas.
+                </p>
+            </section>
+            {% endif %}
+
+            <div style="margin-top: 30px; text-align: center;">
+                <a href="{{ url_for('index.pagina_inicial') }}" class="btn-secondary btn-back"
+                    style="text-decoration: none; display: inline-block;">
+                    Voltar para a página inicial
+                </a>
+            </div>
+        </div>
+    </main>
+</body>
+
+</html>
+
