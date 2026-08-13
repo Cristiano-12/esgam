@@ -754,6 +754,14 @@ p {
   text-underline-offset: 3px;
 }
 
+.status-text strong {
+  display: inline-block;
+  max-width: 15ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+}
+
 @keyframes pulse {
   0%,
   100% {
@@ -796,6 +804,24 @@ p {
 
 .hero-slide.active img {
   transform: scale(1);
+}
+
+.hero-slide-label {
+  position: absolute;
+  left: 1rem;
+  bottom: 1rem;
+  z-index: 2;
+  max-width: min(80%, 22ch);
+  padding: .45rem .7rem;
+  border-radius: var(--radius-pill);
+  background: rgb(18 48 73 / 62%);
+  color: #fff;
+  font-size: .78rem;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .hero-overlay {
@@ -1078,6 +1104,36 @@ p {
   padding: .2rem 1.3rem 1.2rem;
 }
 
+.phone-field {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  padding: 0 .9rem 0 .85rem;
+}
+
+.phone-prefix {
+  color: var(--primary-dark);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.phone-field input {
+  border: 0;
+  outline: none;
+  padding: .85rem 0;
+  width: 100%;
+  min-width: 0;
+  background: transparent;
+}
+
+.phone-field:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgb(47 111 165 / 12%);
+}
+
 .site-footer {
   background: var(--primary-darker);
   color: #c3d6e6;
@@ -1215,6 +1271,19 @@ p {
 @media (width >=1100px) {
   .hero-content h1 {
     font-size: clamp(2.8rem, 4.4vw, 3.9rem);
+  }
+}
+
+@media (width <=400px) {
+  .status-text strong {
+    max-width: 11ch;
+  }
+
+  .hero-slide-label {
+    left: .75rem;
+    bottom: .75rem;
+    max-width: 70%;
+    font-size: .72rem;
   }
 }
 

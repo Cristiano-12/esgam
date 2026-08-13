@@ -80,26 +80,41 @@ body {
 }
 
 #menu-btn {
-    background: none;
-    border: none;
+    background: #fff;
+    border: 1px solid #cbd5e1;
     outline: none;
-    font-size: 24px;
-    color: #475569;
+    font-size: 0.88rem;
+    color: #334155;
     cursor: pointer;
-    padding: 4px 8px;
-    background-color: transparent;
-    transition: color 0.2s ease;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background-color: #fff;
+    transition: color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .top-corner-link {
-    background: rgb(255 255 255 / 70%);
-    border-color: rgb(203 213 225 / 60%);
+    position: fixed;
+    left: 18px;
+    top: 18px;
+    width: 46px;
+    height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 88%);
+    border: 1px solid rgb(203 213 225 / 60%);
     box-shadow: 0 8px 16px rgb(15 23 42 / 6%);
+    color: #1e293b;
+    font-size: 1.2rem;
+    z-index: 60;
 }
 
 #menu-btn:hover {
-    background-color: transparent;
+    background-color: #f8fafc;
     color: #1e293b;
+    border-color: #94a3b8;
+    box-shadow: 0 8px 16px rgb(15 23 42 / 8%);
 }
 
 .dropdown-menu {
@@ -136,6 +151,33 @@ body {
 
 #logout-btn:hover {
     background-color: #fef2f2;
+}
+
+.phone-field {
+    display: flex;
+    align-items: center;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.phone-prefix {
+    padding: 0 12px;
+    color: #0f172a;
+    font-weight: 700;
+    white-space: nowrap;
+    background: #f8fafc;
+    border-right: 1px solid #cbd5e1;
+}
+
+.phone-field input {
+    border: 0;
+    outline: none;
+    height: 38px;
+    padding: 0 12px;
+    width: 100%;
+    min-width: 0;
 }
 
 /* ===================================

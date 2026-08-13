@@ -11,7 +11,9 @@
 </head>
 
 <body>
-    <a href="{{ url_for('login.login') }}" class="top-corner-link" aria-label="Voltar para o login">&larr;</a>
+    <a href="{{ url_for('login.login') }}" class="top-corner-link" aria-label="Voltar para o login">
+        <span aria-hidden="true">←</span>
+    </a>
 
 <header class="main-header">
         <div class="header-logo-container">
@@ -24,7 +26,7 @@
         </div>
 
         <div class="header-menu">
-            <button type="button" id="menu-btn">⋮</button>
+            <button type="button" id="menu-btn" aria-label="Abrir menu">Menu</button>
             <div id="dropdown-menu" class="dropdown-menu">
                 <button type="button" id="logout-btn">Sair</button>
             </div>
@@ -160,7 +162,7 @@
 
                             <label>Título</label>
 
-                            <input type="text" name="titulo" value="{{ banner.titulo }}" maxlength="80" required>
+                        <input type="text" name="titulo" value="{{ banner.titulo }}" maxlength="15" required>
 
                         </div>
 
@@ -168,16 +170,9 @@
 
                             <label>Mensagem</label>
 
-                            <textarea rows="5" name="mensagem" maxlength="280" required>{{ banner.mensagem }}
-                                </textarea>
-
-                        </div>
-
-                        <div class="form-group">
-
-                            <label>Texto do botão</label>
-
-                            <input type="text" name="link_texto" value="{{ banner.link_texto }}" maxlength="30">
+                            <textarea rows="5" name="mensagem" maxlength="40" required>
+                                {{ banner.mensagem }}
+                            </textarea>
 
                         </div>
 
@@ -212,8 +207,9 @@
 
                             <label>Texto</label>
 
-                            <textarea rows="7" name="texto" maxlength="700">{{ sobre.texto }}
-                                </textarea>
+                            <textarea rows="7" name="texto" maxlength="220">
+                                {{ sobre.texto }}
+                            </textarea>
 
                         </div>
 
@@ -328,7 +324,7 @@
 
                             <label>Título</label>
 
-                            <input type="text" name="titulo" value="{{ diretor.titulo }}" maxlength="80">
+                            <input type="text" name="titulo" value="{{ diretor.titulo }}" maxlength="19">
 
                         </div>
 
@@ -336,7 +332,7 @@
 
                             <label>Mensagem</label>
 
-                            <textarea rows="8" name="texto" maxlength="700">{{ diretor.texto }}
+                            <textarea rows="8" name="texto" maxlength="220">{{ diretor.texto }}
                                 </textarea>
 
                         </div>
@@ -384,13 +380,13 @@
 
                         <div class="form-group">
                             <label>Título</label>
-                            <input type="text" name="titulo" maxlength="120" placeholder="Título do comunicado"
+                            <input type="text" name="titulo" maxlength="15" placeholder="Título do comunicado"
                                 required>
                         </div>
 
                         <div class="form-group">
                             <label>Mensagem</label>
-                            <textarea name="texto" rows="6" maxlength="360" placeholder="Escreva o comunicado..." required>
+                            <textarea name="texto" rows="6" maxlength="260" placeholder="Escreva o comunicado..." required>
                             </textarea>
                         </div>
 
@@ -448,11 +444,6 @@
                                     Pergunta 1
                                 </option>
 
-                                <option value="{{ faq2.id }}" data-pergunta="{{ faq2.pergunta }}"
-                                    data-resposta="{{ faq2.resposta }}">
-                                    Pergunta 2
-                                </option>
-
                             </select>
 
                         </div>
@@ -461,7 +452,7 @@
 
                             <label>Pergunta</label>
 
-                            <input id="faq-pergunta" type="text" name="pergunta" value="{{ faq1.pergunta }}" maxlength="140" required>
+                            <input id="faq-pergunta" type="text" name="pergunta" value="{{ faq1.pergunta }}" maxlength="15" required>
 
                         </div>
 
@@ -469,7 +460,7 @@
 
                             <label>Resposta</label>
 
-                            <textarea id="faq-resposta" name="resposta" rows="5" maxlength="320" required>{{ faq1.resposta }}</textarea>
+                            <textarea id="faq-resposta" name="resposta" rows="5" maxlength="100" required>{{ faq1.resposta }}</textarea>
 
                         </div>
 
@@ -508,18 +499,9 @@
 
                             <div class="form-group">
 
-                                <label>Cod</label>
-
-                                <input type="text" name="label" value="{{ stat.cod }}"
-                                    placeholder="PROF | ALUNO | TAXA">
-
-                            </div>
-
-                            <div class="form-group">
-
                                 <label>Nome</label>
 
-                                <input type="text" name="label" value="{{ stat.label }}">
+                                <input type="text" name="label" value="{{ stat.label }}" maxlength="20">
 
                             </div>
 
@@ -536,7 +518,7 @@
 
                                 <label>Sufixo</label>
 
-                                <input type="text" name="sufixo" value="{{ stat.sufixo }}" maxlength="8">
+                                <input type="text" name="sufixo" value="{{ stat.sufixo }}" maxlength="9">
 
                             </div>
 
@@ -584,7 +566,11 @@
 
                             <label>Telefone</label>
 
-                            <input type="text" name="telefone" value="{{ contacto.telefone }}" maxlength="20">
+                            <div class="phone-field">
+                                <span class="phone-prefix">+258</span>
+                                <input type="text" name="telefone" value="{{ contacto.telefone }}"
+                                    maxlength="9" inputmode="numeric" pattern="[0-9]{9}" placeholder="9 dígitos">
+                            </div>
 
                         </div>
 
@@ -703,13 +689,13 @@
 
                         <div class="form-group">
                             <label for="destinoAviso">Destino</label>
-                            <input type="text" id="destino-aviso" name="destino" maxlength="30"
-                                placeholder="Ex.: TODOS| 10 | 10A | 10/A | 10A/C | ID " required>
+                            <input type="text" id="destino-aviso" name="destino" maxlength="5"
+                                placeholder="Ex.: TODOS | 10A | ID" required>
                         </div>
 
                         <div class="form-group">
                             <label for="msgAviso">Mensagem</label>
-                            <textarea id="msg-aviso" name="mensagem" maxlength="240" placeholder="Digite o aviso..." required>
+                            <textarea id="msg-aviso" name="mensagem" maxlength="100" placeholder="Digite o aviso..." required>
                                     </textarea>
                         </div>
 

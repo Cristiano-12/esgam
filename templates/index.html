@@ -120,6 +120,7 @@
                 <div class="hero-slide {% if loop.first %}active{% endif %}"
                     aria-hidden="{% if loop.first %}false{% else %}true{% endif %}">
                     <img src="{{ foto.imagem }}" alt="{{ foto.descricao }}">
+                    <div class="hero-slide-label">{{ foto.descricao or 'Imagem do carrossel' }}</div>
                 </div>
                 {% endfor %}
             </div>
