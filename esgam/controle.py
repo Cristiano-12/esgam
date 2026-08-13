@@ -253,7 +253,6 @@ def central_verificacao():
 def gerir_publicacoes():
     if request.method == 'POST':
         titulo = request.form.get('titulo', '').strip()
-        titulo = titulo[:100]
         categoria = request.form.get('categoria', 'Outro').strip()
         descricao = request.form.get('descricao', '').strip()
         classe = request.form.get('classe', '').strip()
@@ -366,8 +365,6 @@ def atualizar_banner():
     titulo = request.form.get('titulo', '').strip()
     mensagem = request.form.get('mensagem', '').strip()
     link_texto = request.form.get('link_texto', '').strip()
-    titulo = titulo[:15]
-    mensagem = mensagem[:70]
 
     banner = Banner.query.filter_by(ativo=True).first()
     if not banner:
@@ -393,7 +390,6 @@ def atualizar_banner():
 @login_required
 def atualizar_sobre():
     texto = request.form.get('texto', '').strip()
-    texto = texto[:260]
 
     sobre = Sobre.query.first()
     if not sobre:
@@ -421,8 +417,6 @@ def atualizar_sobre():
 def atualizar_diretor():
     titulo = request.form.get('titulo', '').strip()
     texto = request.form.get('texto', '').strip()
-    titulo = titulo[:15]
-    texto = texto[:260]
 
     diretor = Diretor.query.first()
     if not diretor:
@@ -451,8 +445,6 @@ def atualizar_diretor():
 def publicar_comunicado():
     titulo = request.form.get('titulo', '').strip()
     texto = request.form.get('texto', '').strip()
-    titulo = titulo[:15]
-    texto = texto[:180]
 
     if not titulo or not texto:
         flash('Título e mensagem são obrigatórios.', 'comunicado')
@@ -483,8 +475,6 @@ def publicar_comunicado():
 def atualizar_contacto():
     email = request.form.get('email', '').strip()
     telefone = request.form.get('telefone', '').strip()
-    telefone = ''.join(ch for ch in telefone if ch.isdigit())[:9]
-    telefone = f"+258{telefone}" if telefone else ''
 
     contacto = Contacto.query.first()
     if not contacto:
@@ -512,8 +502,6 @@ def atualizar_faq():
     faq_id = request.form.get('id')
     pergunta = request.form.get('pergunta', '').strip()
     resposta = request.form.get('resposta', '').strip()
-    pergunta = pergunta[:40]
-    resposta = resposta[:120]
 
     if not faq_id:
         flash('Selecione uma pergunta válida.', 'faq')

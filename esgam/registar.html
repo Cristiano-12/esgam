@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registar Aluno - ESGAM</title>
+    <!-- Ficheiro CSS estático via url_for -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='controle.css') }}">
+</head>
+
+<body>
+    <main class="dashboard">
+
+        <section class="card" style="max-width: 500px; margin: 40px auto;">
+            <h2>Registar Novo Aluno</h2>
+            <p class="card-subtitle">
+                Insira os dados do estudante. O ID será gerado de forma automática pelo sistema.
+            </p>
+
+            <!-- Rota Flask para submeter o formulário -->
+            <form id="reg-form" action="{{ url_for('registar_aluno.salvar_aluno') }}" method="POST">
+
+                <div class="form-group">
+                    <label for="nome-aluno">Nome Completo</label>
+                    <input type="text" id="nome-aluno" name="nome" placeholder="Nome do estudante" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="classe-aluno">Classe</label>
+                    <select name="classe" id="classe-aluno" required>
+                        <option value="">Selecionar Classe</option>
+                        <option value="10">10ª classe</option>
+                        <option value="11">11ª classe</option>
+                        <option value="12">12ª classe</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="grupo-aluno">Grupo</label>
+                    <select name="grupo" id="grupo-aluno" required>
+                        <option value="">Selecionar Grupo</option>
+                        <option value="A">Grupo A</option>
+                        <option value="B">Grupo B</option>
+                        <option value="C">Grupo C</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="turma-aluno">Turma</label>
+                    <select name="turma" id="turma-aluno" required>
+                        <option value="">Selecionar Turma</option>
+                        {% for letra in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
+                        <option value="{{ letra }}">Turma {{ letra }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- O bloco só aparece se o Flask retornar um id_gerado -->
+                {% if id_gerado %}
+                <div id="id-bloco" class="form-group">
+                    <label for="id-gerado">ID Gerado</label>
+                    <p class="card-subtitle" style="margin-bottom:10px;">
+                        Guarde este ID. Ele será utilizado pelo estudante para aceder ao portal.
+                    </p>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="id-gerado" value="{{ id_gerado }}" readonly
+                            style="flex:1; background:#f8fafc; font-weight:bold; color:#1e293b;">
+                        <button type="button" id="btn-copiar" class="btn-secondary" onclick="copiarID()"
+                            style="width:auto; padding:0 18px;">
+                            Copiar
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="action-buttons-row" style="display: flex; gap: 12px; margin-top: 20px;">
+                    <button type="submit" class="btn-primary" style="flex: 1;">
+                        Gravar Aluno
+                    </button>
+                    <a href="{{ url_for('controle.central_verificacao') }}" class="btn-secondary"
+                        style="flex: 1; text-align: center; text-decoration: none; line-height: 38px;">
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+
+            <!-- Suporte dinâmico para mensagens Flash do Flask -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="flash {{ category }}" role="status"
+                style="margin-top: 20px; display: flex; align-items: center; justify-content: space-between;">
+                <span style="text-align:center; flex:1;">
+                    {{ message }}
+                </span>
+                <button class="flash-close" onclick="this.parentElement.style.display='none';" aria-label="Fechar"
+                    style="background:none; border:none; cursor:pointer; font-size: 18px;">×</button>
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+        </section>
+    </main>
+
+</body>
+
+</html>
