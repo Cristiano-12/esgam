@@ -255,6 +255,40 @@ class FAQ(db.Model):
         return f"<FAQ id={self.id}>"
 
 
+class EstatisticaPagina(db.Model):
+    __tablename__ = 'estatisticas_pagina'
+
+    id = db.Column(db.Integer, primary_key=True)
+    cod = db.Column(db.String(30), unique=True, nullable=False)
+    label = db.Column(db.String(120), nullable=False)
+    valor = db.Column(db.Float, nullable=False, default=0)
+    sufixo = db.Column(db.String(20), nullable=True, default="")
+    animar = db.Column(db.Boolean, default=True, nullable=False)
+
+    def __repr__(self):
+        return f"<EstatisticaPagina cod={self.cod}>"
+
+
+class PautaTurma(db.Model):
+    __tablename__ = 'pautas_turma'
+
+    id = db.Column(db.Integer, primary_key=True)
+    titulo = db.Column(db.String(200), nullable=False)
+    tipo = db.Column(db.String(30), nullable=False, default='turmas')
+    categoria = db.Column(db.String(50), nullable=True)
+    classe = db.Column(db.String(20), nullable=True)
+    turma = db.Column(db.String(20), nullable=True)
+    periodo = db.Column(db.String(50), nullable=True)
+    arquivo = db.Column(db.String(255), nullable=False)
+    ficheiro = db.Column(db.LargeBinary, nullable=False)
+    mimetype = db.Column(db.String(120), nullable=True)
+    data_publicacao = db.Column(db.DateTime, default=datetime.now, nullable=False)
+    ativo = db.Column(db.Boolean, default=True, nullable=False)
+
+    def __repr__(self):
+        return f"<PautaTurma id={self.id} tipo={self.tipo}>"
+
+
 class Aviso(db.Model):
     __tablename__ = 'avisos'
 

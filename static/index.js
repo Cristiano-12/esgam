@@ -220,13 +220,13 @@
       // easeOutExpo — desacelera suavemente perto do fim
       const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
       const value = target * eased;
- 
-      el.textContent = isInteger ? Math.round(value) : value.toFixed(1);
- 
+
+      el.textContent = Math.round(value);
+
       if (progress < 1) {
         requestAnimationFrame(tick);
       } else {
-        el.textContent = isInteger ? target : target.toFixed(1);
+        el.textContent = Math.round(target);
       }
     }
  
@@ -248,7 +248,7 @@
     // Sem suporte a IntersectionObserver: mostra o valor final direto
     statNumbers.forEach((el) => {
       const target = el.getAttribute('data-target');
-      if (target) el.textContent = target;
+      if (target) el.textContent = Math.round(parseFloat(target));
     });
   }
  

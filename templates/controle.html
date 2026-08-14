@@ -83,28 +83,28 @@
                         onsubmit="return confirm('Pretende atualizar o carrossel principal?')">
 
                         <div class="form-group">
-                            <label>Imagem 1</label>
-                            <input type="file" name="foto1" accept="image/*">
+                            <label>1</label>
+                            <input type="file" name="foto1" accept="image/*"><small class="file-indicator">Nenhum ficheiro selecionado</small>
                         </div>
 
                         <div class="form-group">
-                            <label>Imagem 2</label>
-                            <input type="file" name="foto2" accept="image/*">
+                            <label>2</label>
+                            <input type="file" name="foto2" accept="image/*"><small class="file-indicator">Nenhum ficheiro selecionado</small>
                         </div>
 
                         <div class="form-group">
-                            <label>Imagem 3</label>
-                            <input type="file" name="foto3" accept="image/*">
+                            <label>3</label>
+                            <input type="file" name="foto3" accept="image/*"><small class="file-indicator">Nenhum ficheiro selecionado</small>
                         </div>
 
                         <div class="form-group">
-                            <label>Imagem 4</label>
-                            <input type="file" name="foto4" accept="image/*">
+                            <label>4</label>
+                            <input type="file" name="foto4" accept="image/*"><small class="file-indicator">Nenhum ficheiro selecionado</small>
                         </div>
 
                         <div class="form-group">
-                            <label>Imagem 5</label>
-                            <input type="file" name="foto5" accept="image/*">
+                            <label>5</label>
+                            <input type="file" name="foto5" accept="image/*"><small class="file-indicator">Nenhum ficheiro selecionado</small>
                         </div>
 
                         <button type="submit" class="btn-primary">
@@ -217,7 +217,7 @@
 
                             <label>Imagem da Escola</label>
 
-                            <input type="file" name="foto" accept="image/*">
+                            <input type="file" name="foto" accept="image/*"><small class="file-indicator">Nenhum ficheiro selecionado</small>
 
                         </div>
 
@@ -240,10 +240,10 @@
                         página pública.
                     </p>
 
-                    {% with messages = get_flashed_messages(category_filter=["sucesso", "erro"]) %}
+                    {% with messages = get_flashed_messages(category_filter=["sucesso", "erro"], with_categories=true) %}
                     {% if messages %}
-                    {% for mensagem in messages %}
-                    <div class="flash success">
+                    {% for categoria, mensagem in messages %}
+                    <div class="flash {{ 'error' if categoria == 'erro' else 'success' }}">
                         <span>{{ mensagem }}</span>
                         <button class="flash-close">&times;</button>
                     </div>
@@ -282,7 +282,7 @@
 
                         <div class="form-group">
                             <label>Escolher PDF</label>
-                            <input type="file" name="arquivo" accept=".pdf" required>
+                            <input type="file" name="arquivo" accept=".pdf" required><small class="file-indicator">Nenhum ficheiro selecionado</small>
                         </div>
 
                         <button class="btn-primary">Guardar Publicação</button>
@@ -341,7 +341,7 @@
 
                             <label>Fotografia</label>
 
-                            <input type="file" name="foto" accept="image/*">
+                            <input type="file" name="foto" accept="image/*"><small class="file-indicator">Nenhum ficheiro selecionado</small>
 
                         </div>
 
@@ -432,27 +432,14 @@
                     </div>
 
                     <form action="/admin/faq" method="POST">
-
-                        <div class="form-group">
-
-                            <label>Pergunta a editar</label>
-
-                            <select id="faq-select" name="id" required>
-
-                                <option value="{{ faq1.id }}" data-pergunta="{{ faq1.pergunta }}"
-                                    data-resposta="{{ faq1.resposta }}">
-                                    Pergunta 1
-                                </option>
-
-                            </select>
-
-                        </div>
+                        <input type="hidden" name="id" value="{{ faq_unica.id if faq_unica else '' }}">
 
                         <div class="form-group">
 
                             <label>Pergunta</label>
 
-                            <input id="faq-pergunta" type="text" name="pergunta" value="{{ faq1.pergunta }}" maxlength="15" required>
+                            <input id="faq-pergunta" type="text" name="pergunta"
+                                value="{{ faq_unica.pergunta if faq_unica else '' }}" maxlength="80" required>
 
                         </div>
 
@@ -460,7 +447,7 @@
 
                             <label>Resposta</label>
 
-                            <textarea id="faq-resposta" name="resposta" rows="5" maxlength="100" required>{{ faq1.resposta }}</textarea>
+                            <textarea id="faq-resposta" name="resposta" rows="5" maxlength="300" required>{{ faq_unica.resposta if faq_unica else '' }}</textarea>
 
                         </div>
 
@@ -509,7 +496,8 @@
 
                                 <label>Valor</label>
 
-                                <input type="number" name="valor" value="{{ stat.valor }}"
+                                <input type="number" name="valor" value="{{ stat.valor|int }}"
+                                    step="1" min="0"
                                     style="width: 100%; height: 38px;">
 
                             </div>
@@ -568,8 +556,10 @@
 
                             <div class="phone-field">
                                 <span class="phone-prefix">+258</span>
-                                <input type="text" name="telefone" value="{{ contacto.telefone }}"
-                                    maxlength="9" inputmode="numeric" pattern="[0-9]{9}" placeholder="9 dígitos">
+                                <input type="text" name="telefone"
+                                    value="{{ contacto.telefone|replace('+258', '') if contacto.telefone != '-' else '' }}"
+                                    maxlength="9" inputmode="numeric" pattern="[0-9]{9}" placeholder="9 dígitos"
+                                    data-phone-input>
                             </div>
 
                         </div>
@@ -621,6 +611,11 @@
 
                 <section class="card">
                     <h2>Publicação de Notas</h2>
+                    <p class="card-subtitle">
+                        A 1ª linha do Excel deve conter os títulos das colunas:
+                        <strong>Matrícula, Nome, Classe, Turma, Período, Disciplina, AC, PT, AP</strong>.
+                        A coluna Matrícula é opcional; as restantes são necessárias para identificar o aluno e a nota.
+                    </p>
                     {% with messages = get_flashed_messages(category_filter=["pauta"]) %}
                     {% if messages %}
                     {% for mensagem in messages %}
@@ -639,7 +634,7 @@
                         <div class="form-group">
                             <label for="arquivoNotas">Ficheiros Excel</label>
                             <input type="file" id="arquivo-notas" name="arquivo_pauta" accept=".xlsx,.xls" multiple
-                                required>
+                                required><small class="file-indicator">Nenhum ficheiro selecionado</small>
                         </div>
 
                         <button type="submit" class="btn-primary">
@@ -660,7 +655,7 @@
                         <div class="form-group">
                             <label for="arquivoTurmas">Ficheiros Excel</label>
                             <input type="file" id="arquivo-turmas" name="arquivo_pauta" accept=".xlsx,.xls" multiple
-                                required>
+                                required><small class="file-indicator">Nenhum ficheiro selecionado</small>
                         </div>
 
                         <button type="submit" class="btn-primary">
@@ -861,6 +856,17 @@
 
                 </div>
 
+                {% with mensagens = get_flashed_messages(category_filter=["pendencia-sucesso", "pendencia-erro"], with_categories=true) %}
+                {% if mensagens %}
+                {% for categoria, mensagem in mensagens %}
+                <div class="flash {{ 'error' if categoria == 'pendencia-erro' else 'success' }}" style="margin-top:20px;">
+                    <span>{{ mensagem }}</span>
+                    <button type="button" class="flash-close">&times;</button>
+                </div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+
                 {% if pendencias %}
 
                 <h3 style="margin-top:30px;">
@@ -872,7 +878,7 @@
                 <div style="margin-top:20px;padding:22px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;">
 
                     <h3 style="margin-bottom:10px;">
-                        {{ erro.nome_ficheiro }}
+                        {{ erro.nome_excel or erro.arquivo or 'Pendência #' ~ erro.id }}
                     </h3>
 
                     <p style="margin-bottom:18px;color:#64748b;">
@@ -1069,5 +1075,4 @@
 
     <script src="{{ url_for('static', filename='login.js') }}"></script>
 </body>
-
 </html>

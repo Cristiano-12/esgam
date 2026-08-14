@@ -119,8 +119,7 @@
                 {% for foto in fotos_carrossel[:5] %}
                 <div class="hero-slide {% if loop.first %}active{% endif %}"
                     aria-hidden="{% if loop.first %}false{% else %}true{% endif %}">
-                    <img src="{{ foto.imagem }}" alt="{{ foto.descricao }}">
-                    <div class="hero-slide-label">{{ foto.descricao or 'Imagem do carrossel' }}</div>
+                    <img src="{{ foto.imagem }}" alt="{{ foto.descricao or '' }}">
                 </div>
                 {% endfor %}
             </div>
@@ -157,8 +156,8 @@
                     <div class="stat-box">
                         <strong
                             class="stat-number"
-                            {% if stat.animar %}data-target="{{ stat.valor }}"{% else %}data-no-anim="true"{% endif %}
-                        >{{ 0 if stat.animar else stat.valor }}</strong>
+                            {% if stat.animar %}data-target="{{ stat.valor|int }}"{% else %}data-no-anim="true"{% endif %}
+                        >{{ 0 if stat.animar else stat.valor|int }}</strong>
                         {% if stat.sufixo %}<span class="stat-suffix">{{ stat.sufixo }}</span>{% endif %}
                         <span class="stat-label">{{ stat.label }}</span>
                     </div>

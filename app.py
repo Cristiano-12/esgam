@@ -3,6 +3,7 @@ import secrets
 
 from flask import Flask, render_template, send_from_directory
 from jinja2 import TemplateNotFound
+from sqlalchemy import inspect, text
 from sqlalchemy.engine import URL
 from werkzeug.security import generate_password_hash
 
@@ -151,6 +152,7 @@ def create_app():
     with app.app_context():
         try:
             db.create_all()
+            _garantir_colunas_pautas_turma(app)
 
             # Cria o utilizador admin apenas se não estiver a rodar no Vercel (ambiente local)
             if not os.getenv("VERCEL"):
@@ -171,6 +173,31 @@ def create_app():
             db.session.rollback()
 
     return app
+
+
+def _garantir_colunas_pautas_turma(app):
+    """Mantém a tabela pautas_turma compatível com o modelo atual sem apagar dados."""
+    try:
+        engine = db.engine
+        insp = inspect(engine)
+        if "pautas_turma" not in insp.get_table_names():
+            return
+
+        colunas = {col["name"] for col in insp.get_columns("pautas_turma")}
+        alteracoes = []
+
+        if "ficheiro" not in colunas:
+            alteracoes.append("ALTER TABLE pautas_turma ADD COLUMN ficheiro BYTEA")
+        if "mimetype" not in colunas:
+            alteracoes.append("ALTER TABLE pautas_turma ADD COLUMN mimetype VARCHAR(120)")
+
+        if alteracoes:
+            with engine.begin() as conn:
+                for sql in alteracoes:
+                    conn.execute(text(sql))
+            app.logger.info("Tabela pautas_turma atualizada com colunas em falta: %s", ", ".join(alteracoes))
+    except Exception:
+        app.logger.exception("Não foi possível garantir o esquema de pautas_turma.")
 
 
 app = create_app()

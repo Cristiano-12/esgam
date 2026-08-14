@@ -75,3 +75,26 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCounter();
     });
 });
+
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('input[type="file"]').forEach(function (input) {
+        var indicador = document.createElement('small');
+        indicador.className = 'file-indicator';
+        indicador.textContent = 'Nenhum ficheiro selecionado';
+        input.insertAdjacentElement('afterend', indicador);
+
+        input.addEventListener('change', function () {
+            if (!input.files || input.files.length === 0) {
+                indicador.textContent = 'Nenhum ficheiro selecionado';
+                indicador.classList.remove('has-file');
+                return;
+            }
+            var nomes = Array.prototype.map.call(input.files, function (f) { return f.name; });
+            indicador.textContent = nomes.length > 1
+                ? nomes.length + ' ficheiros selecionados: ' + nomes.join(', ')
+                : nomes[0];
+            indicador.classList.add('has-file');
+        });
+    });
+});

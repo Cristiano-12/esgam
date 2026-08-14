@@ -7,6 +7,142 @@
     <title>Publicações - ESGAM</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='controle.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='global.css') }}">
+    <style>
+        .pauta-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 28px;
+            margin-top: 28px;
+        }
+
+        .pauta-card {
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .pauta-sheet {
+            width: 100%;
+            border-radius: 18px;
+            overflow: hidden;
+            border: 1px solid #dbe4ee;
+            background: linear-gradient(180deg, #fdfdfd 0%, #f7fafc 100%);
+            box-shadow: 0 18px 36px rgba(15, 23, 42, 0.12);
+        }
+
+        .pauta-sheet-head {
+            padding: 14px 16px 12px;
+            border-bottom: 1px solid #e5eef7;
+        }
+
+        .pauta-kicker {
+            font-size: 0.76rem;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+
+        .pauta-sheet-title {
+            margin: 0;
+            font-size: clamp(0.98rem, 1.2vw, 1.15rem);
+        }
+
+        .pauta-sheet-subtitle {
+            margin: 4px 0 0;
+            color: #64748b;
+            font-size: 0.84rem;
+        }
+
+        .pauta-preview {
+            padding: 0;
+        }
+
+        .pauta-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            font-size: clamp(0.74rem, 0.9vw, 0.9rem);
+            background: #fff;
+        }
+
+        .pauta-table th,
+        .pauta-table td {
+            border: 1px solid #e2e8f0;
+            padding: 9px 10px;
+            text-align: left;
+            vertical-align: top;
+            word-break: break-word;
+        }
+
+        .pauta-table th {
+            background: #f8fafc;
+            font-weight: 700;
+        }
+
+        .pauta-meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .pauta-topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 16px 10px;
+            border-bottom: 1px solid #e5eef7;
+            background: rgba(255, 255, 255, 0.78);
+            backdrop-filter: blur(10px);
+        }
+
+        .pauta-download {
+            flex: 0 0 auto;
+            font-size: 0.76rem;
+            padding: 7px 11px;
+            border-radius: 999px;
+            line-height: 1;
+        }
+
+        .pauta-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .pauta-date {
+            color: #64748b;
+            font-size: 0.92rem;
+        }
+
+        @media (max-width: 768px) {
+            .pauta-gallery {
+                grid-template-columns: 1fr;
+                gap: 18px;
+            }
+
+            .pauta-card {
+                padding: 14px;
+            }
+
+            .pauta-preview {
+                padding: 12px;
+            }
+
+            .pauta-topbar {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .pauta-download {
+                align-self: flex-start;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -26,38 +162,61 @@
 
             {% if modo_pauta_aberto %}
             <section class="card" style="background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);">
-                <h2 style="margin-bottom: 8px;">Centro de Publicações</h2>
+                <h2 style="margin-bottom: 8px;">Vitrine de Documentos</h2>
                 <p class="card-subtitle">
                     Aqui ficam disponíveis editais, listas, pautas públicas, calendários, comunicados e outros
-                    documentos oficiais.
+                    documentos oficiais, incluindo turmas.
                 </p>
             </section>
 
             {% if publicacoes %}
-            <div style="margin-top: 24px; display: grid; gap: 16px;">
+            <div class="pauta-gallery">
                 {% for item in publicacoes %}
-                <section class="card publicacao-card">
-                    <div class="publicacao-conteudo">
-                        <div class="publicacao-categoria">
-                            {{ item.categoria or 'Outro' }}
+                <section class="card pauta-card">
+                    <div class="pauta-sheet">
+                        <div class="pauta-topbar">
+                            <div>
+                                <div class="pauta-kicker">Documento</div>
+                                <h3 class="pauta-sheet-title">Documento</h3>
+                                <p class="pauta-sheet-subtitle">Folha enviada para consulta pública</p>
+                            </div>
+                            <a href="{{ url_for('pauta.descarregar_ficheiro', pauta_id=item.id) }}"
+                                target="_blank" class="btn-primary pauta-download" aria-label="Baixar documento">
+                                Baixar
+                            </a>
                         </div>
-                        <h3 class="publicacao-titulo">{{ item.titulo }}</h3>
-                        {% if item.classe %}
-                        <p class="publicacao-meta">Classe: {{ item.classe }}</p>
-                        {% endif %}
-                        {% if item.descricao %}
-                        <p class="publicacao-descricao">{{ item.descricao }}</p>
-                        {% endif %}
-                        <p class="publicacao-meta">Arquivo: {{ item.arquivo }}</p>
-                    </div>
-                    <div class="publicacao-acoes">
-                        <div class="publicacao-data">
-                            {{ item.data_publicacao.strftime('%d/%m/%Y') if item.data_publicacao else 'Sem data' }}
+
+                        {% if item.tem_preview %}
+                        <div class="pauta-preview">
+                            <table class="pauta-table">
+                                <thead>
+                                    <tr>
+                                        {% for cab in item.preview_cabecalho %}
+                                        <th>{{ cab }}</th>
+                                        {% endfor %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for linha in item.preview_linhas %}
+                                    <tr>
+                                        {% for celula in linha %}
+                                        <td>{{ celula }}</td>
+                                        {% endfor %}
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
-                        <a href="{{ url_for('static', filename='uploads/publicacoes/' + item.arquivo) }}"
-                            target="_blank" class="btn-primary publicacao-botao">
-                            Visualizar PDF
-                        </a>
+                        {% else %}
+                        <div class="pauta-preview" style="text-align:center; color:#64748b; padding: 28px 18px;">
+                            Não foi possível gerar pré-visualização desta folha.
+                        </div>
+                        {% endif %}
+                        <div class="pauta-meta" style="padding: 14px 16px 16px; border-top: 1px solid #e5eef7;">
+                            <div class="pauta-date">
+                                {{ item.data_publicacao.strftime('%d/%m/%Y') if item.data_publicacao else 'Sem data' }}
+                            </div>
+                        </div>
                     </div>
                 </section>
                 {% endfor %}

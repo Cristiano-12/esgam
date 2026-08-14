@@ -1,8 +1,12 @@
 import logging
 import os
+import re
+import unicodedata
 import requests
 from datetime import datetime
+from difflib import get_close_matches
 from functools import wraps
+from io import BytesIO
 from werkzeug.utils import secure_filename
 from flask import (
     Blueprint,
@@ -11,7 +15,8 @@ from flask import (
     redirect,
     url_for,
     flash,
-    session
+    session,
+    make_response
 )
 from models import (
     db,
@@ -25,6 +30,8 @@ from models import (
     Turma,
     Comunicado,
     FAQ,
+    EstatisticaPagina,
+    PautaTurma,
     Sobre,
     Diretor,
     Contacto,
@@ -89,13 +96,23 @@ class ContactoFake:
 # ==========================================
 
 def login_required(f):
-    """Decorator para restrição de acesso a utilizadores autenticados."""
+    """Decorator para restrição de acesso a utilizadores autenticados.
+
+    Além de bloquear o acesso, marca a resposta como "não guardável" (no-store).
+    Isto evita que, depois de clicar em "Sair", o botão Voltar do navegador
+    mostre uma versão em cache desta página protegida.
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'admin_logged_in' not in session:
             flash('Por favor, efetue login para aceder a esta página.', 'erro')
             return redirect(url_for('login.login'))
-        return f(*args, **kwargs)
+
+        response = make_response(f(*args, **kwargs))
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        return response
     return decorated_function
 
 
@@ -127,18 +144,33 @@ def obter_carrossel():
 def obter_estatisticas():
     def contar(modelo):
         try:
-            return modelo.query.count()
+            return int(modelo.query.count())
         except Exception:
             db.session.rollback()
             return 0
 
-    return [
-        {"id": 1, "cod": "ANO", "label": "Ano de Fundação", "valor": 2000, "animar": False, "sufixo": ""},
-        {"id": 2, "cod": "ALUNO", "label": "Alunos Registados", "valor": contar(Aluno), "animar": True, "sufixo": "+"},
-        {"id": 3, "cod": "PROF", "label": "Corpo Docente", "valor": contar(Professor), "animar": True, "sufixo": ""},
-        {"id": 4, "cod": "TURMA", "label": "Turmas Activas", "valor": contar(Turma), "animar": True, "sufixo": ""}
+    defaults = [
+        ("ANO", "Ano de Funda??o", 2000.0, False, ""),
+        ("ALUNO", "Alunos Registados", contar(Aluno), True, "+"),
+        ("PROF", "Corpo Docente", contar(Professor), True, ""),
+        ("TURMA", "Turmas Activas", contar(Turma), True, ""),
     ]
 
+    try:
+        itens = {item.cod: item for item in EstatisticaPagina.query.order_by(EstatisticaPagina.id.asc()).all()}
+        for cod, label, valor, animar, sufixo in defaults:
+            if cod not in itens:
+                db.session.add(EstatisticaPagina(cod=cod, label=label, valor=valor, animar=animar, sufixo=sufixo))
+        db.session.commit()
+        return EstatisticaPagina.query.order_by(EstatisticaPagina.id.asc()).all()
+    except Exception:
+        db.session.rollback()
+        return [
+            {"id": 1, "cod": "ANO", "label": "Ano de Funda??o", "valor": 2000, "animar": False, "sufixo": ""},
+            {"id": 2, "cod": "ALUNO", "label": "Alunos Registados", "valor": contar(Aluno), "animar": True, "sufixo": "+"},
+            {"id": 3, "cod": "PROF", "label": "Corpo Docente", "valor": contar(Professor), "animar": True, "sufixo": ""},
+            {"id": 4, "cod": "TURMA", "label": "Turmas Activas", "valor": contar(Turma), "animar": True, "sufixo": ""}
+        ]
 
 def obter_comunicados():
     try:
@@ -151,11 +183,17 @@ def obter_comunicados():
 
 def obter_faq():
     try:
-        return FAQ.query.order_by(FAQ.id.desc()).limit(1).all()
+        faq = FAQ.query.first()
+        if faq:
+            return [faq]
+        faq = FAQ(pergunta='Como consultar as pautas do meu educando?', resposta='Aceda ao portal e use o seu ID e senha.')
+        db.session.add(faq)
+        db.session.commit()
+        return [faq]
     except Exception:
         logging.exception("Erro ao carregar FAQ.")
         db.session.rollback()
-        return []
+        return [FAQFake()]
 
 
 def obter_sobre():
@@ -221,9 +259,7 @@ def central_verificacao():
     config = ConfiguracaoSistema.query.first()
 
     faqs = obter_faq()
-    faq1 = faqs[0] if len(faqs) > 0 else FAQFake()
-    faq2 = faqs[1] if len(faqs) > 1 else FAQFake()
-
+    faq_unica = faqs[0] if faqs else FAQFake()
     contexto = {
         "total_alunos": Aluno.query.filter_by(deleted_at=None).count(),
         "total_classes": Classe.query.filter_by(deleted_at=None).count(),
@@ -237,11 +273,10 @@ def central_verificacao():
         "estatisticas": obter_estatisticas(),
         "fotos_carrossel": obter_carrossel(),
         "faq_dinamico": faqs,
-        "faq1": faq1,
-        "faq2": faq2,
+        "faq_unica": faq_unica,
         "publicacoes": Publicacao.query.filter_by(ativo=True).order_by(Publicacao.data_publicacao.desc()).all(),
-        "excel_recebidos": 0,
-        "excel_importados": 0,
+        "excel_importados": Nota.query.count(),
+        "excel_recebidos": Nota.query.count() + PendenciaPauta.query.filter_by(status='pendente').count(),
         "pendencias": pendencias,
     }
 
@@ -287,28 +322,25 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
 SUPABASE_BUCKET = "uploads"
 
 
-def _guardar_ficheiro(campo_nome, subpasta=''):
-    """Envia um ficheiro para o Supabase Storage e devolve o URL público, ou None."""
-    arquivo = request.files.get(campo_nome)
-    if not (arquivo and arquivo.filename):
-        return None
+def _guardar_bytes_supabase(nome_arquivo, conteudo, tipo_mime, subpasta=''):
+    """Envia bytes para o Supabase Storage e devolve o URL público, ou None.
 
+    Não toca no disco local — funciona igual em local e no Vercel (cujo
+    filesystem é só-de-leitura fora de /tmp).
+    """
     if not SUPABASE_KEY:
         logging.error("SUPABASE_KEY não está definida — não é possível enviar ficheiros.")
         flash('Configuração de armazenamento em falta. Contacte o suporte técnico.', 'erro')
         return None
 
-    nome_arquivo = secure_filename(arquivo.filename)
+    nome_arquivo = secure_filename(nome_arquivo)
     caminho_storage = f"{subpasta}/{nome_arquivo}" if subpasta else nome_arquivo
-
-    conteudo = arquivo.read()
-    tipo_mime = arquivo.mimetype or 'application/octet-stream'
 
     url_upload = f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/{caminho_storage}"
     headers = {
         "Authorization": f"Bearer {SUPABASE_KEY}",
         "apikey": SUPABASE_KEY,
-        "Content-Type": tipo_mime,
+        "Content-Type": tipo_mime or 'application/octet-stream',
         "x-upsert": "true",  # substitui o ficheiro se já existir com o mesmo nome
     }
 
@@ -317,37 +349,32 @@ def _guardar_ficheiro(campo_nome, subpasta=''):
         if resposta.status_code not in (200, 201):
             logging.error("Erro ao enviar '%s' para o Supabase Storage: %s - %s",
                           nome_arquivo, resposta.status_code, resposta.text)
-            flash('Não foi possível guardar a imagem. As restantes alterações foram guardadas.', 'erro')
             return None
     except requests.RequestException:
         logging.exception("Erro de rede ao enviar '%s' para o Supabase Storage.", nome_arquivo)
-        flash('Não foi possível guardar a imagem (erro de rede). As restantes alterações foram guardadas.', 'erro')
         return None
 
     return f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/{caminho_storage}"
 
 
-def _extension_excel(nome_arquivo):
-    return os.path.splitext(nome_arquivo.lower())[1] in {".xlsx", ".xls"}
-
-
-def _guardar_upload_excel(arquivo, subpasta="pautas"):
-    if not arquivo or not arquivo.filename:
-        return None, "Ficheiro inválido."
+def _guardar_ficheiro(campo_nome, subpasta=''):
+    """Envia um ficheiro de imagem (vindo de request.files) para o Supabase Storage."""
+    arquivo = request.files.get(campo_nome)
+    if not (arquivo and arquivo.filename):
+        return None
 
     nome_arquivo = secure_filename(arquivo.filename)
-    if not _extension_excel(nome_arquivo):
-        return None, "Apenas ficheiros Excel (.xlsx ou .xls) são aceites."
+    conteudo = arquivo.read()
+    tipo_mime = arquivo.mimetype or 'application/octet-stream'
 
-    pasta_destino = os.path.join("static", "uploads", subpasta)
-    try:
-        os.makedirs(pasta_destino, exist_ok=True)
-        caminho = os.path.join(pasta_destino, nome_arquivo)
-        arquivo.save(caminho)
-        return nome_arquivo, None
-    except OSError:
-        logging.exception("Erro ao guardar ficheiro Excel '%s'.", nome_arquivo)
-        return None, "Não foi possível guardar o ficheiro Excel neste servidor."
+    url_publico = _guardar_bytes_supabase(nome_arquivo, conteudo, tipo_mime, subpasta=subpasta)
+    if not url_publico:
+        flash('Não foi possível guardar a imagem. As restantes alterações foram guardadas.', 'erro')
+    return url_publico
+
+
+def _extension_excel(nome_arquivo):
+    return os.path.splitext(nome_arquivo.lower())[1] in {".xlsx", ".xls"}
 
 
 def _subpasta_para_tipo_pauta(tipo_pauta):
@@ -357,6 +384,217 @@ def _subpasta_para_tipo_pauta(tipo_pauta):
     if tipo == "turmas":
         return "pautas"
     return "pautas"
+
+
+# ------------------------------------------------------------------
+# Leitura e classificação das linhas do Excel de pautas
+# ------------------------------------------------------------------
+
+CABECALHOS_ESPERADOS = {
+    "matricula": ("matricula", "matrícula", "codigo", "código", "id"),
+    "nome": ("nome", "aluno", "nome do aluno", "estudante"),
+    "classe": ("classe",),
+    "turma": ("turma",),
+    "periodo": ("periodo", "período", "trimestre"),
+    "disciplina": ("disciplina",),
+    "nota_ac": ("ac", "nota_ac", "notaac"),
+    "nota_pt": ("pt", "nota_pt", "notapt"),
+    "nota_ap": ("ap", "nota_ap", "notaap"),
+}
+
+
+def _normalizar(texto):
+    """Remove acentos e baixa a caixa, para comparar cabeçalhos/nomes com tolerância."""
+    if texto is None:
+        return ""
+    texto = str(texto).strip().lower()
+    texto = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode("ascii")
+    return re.sub(r"\s+", " ", texto).strip()
+
+
+def _mapear_colunas(linha_cabecalho):
+    """Associa cada coluna do Excel (pela 1ª linha) ao campo interno correspondente."""
+    mapa = {}
+    for indice, celula in enumerate(linha_cabecalho or []):
+        chave_normalizada = _normalizar(celula)
+        for campo, aliases in CABECALHOS_ESPERADOS.items():
+            if chave_normalizada in aliases:
+                mapa[campo] = indice
+                break
+    return mapa
+
+
+def _ler_linhas_excel(conteudo_bytes):
+    """Lê o ficheiro Excel (em memória) e devolve (linhas, erro).
+
+    Cada linha é um dicionário com as chaves de CABECALHOS_ESPERADOS.
+    Espera uma 1ª linha de cabeçalho com nomes como:
+    Matrícula | Nome | Classe | Turma | Período | Disciplina | AC | PT | AP
+    """
+    if load_workbook is None:
+        return None, "A biblioteca 'openpyxl' não está instalada no servidor — contacte o suporte técnico."
+
+    try:
+        livro = load_workbook(BytesIO(conteudo_bytes), data_only=True, read_only=True)
+        folha = livro.active
+    except Exception:
+        logging.exception("Erro ao abrir o ficheiro Excel.")
+        return None, "O ficheiro não pôde ser aberto. Verifique se é um .xlsx válido."
+
+    linhas_brutas = list(folha.iter_rows(values_only=True))
+    if not linhas_brutas:
+        return None, "O ficheiro Excel está vazio."
+
+    mapa = _mapear_colunas(linhas_brutas[0])
+    if "nome" not in mapa:
+        return None, ("Não foi possível identificar a coluna 'Nome' no cabeçalho. "
+                       "Confirme que a 1ª linha do Excel contém os títulos das colunas.")
+
+    def valor(linha, campo):
+        indice = mapa.get(campo)
+        if indice is None or indice >= len(linha):
+            return None
+        return linha[indice]
+
+    def para_float(v):
+        try:
+            return float(v) if v not in (None, "") else None
+        except (TypeError, ValueError):
+            return None
+
+    linhas = []
+    for linha in linhas_brutas[1:]:
+        nome = valor(linha, "nome")
+        if nome is None or str(nome).strip() == "":
+            continue  # ignora linhas em branco
+
+        linhas.append({
+            "matricula": (str(valor(linha, "matricula")).strip() if valor(linha, "matricula") not in (None, "") else None),
+            "nome": str(nome).strip(),
+            "classe": str(valor(linha, "classe") or "").strip(),
+            "turma": str(valor(linha, "turma") or "").strip(),
+            "periodo": str(valor(linha, "periodo") or "").strip(),
+            "disciplina": str(valor(linha, "disciplina") or "").strip(),
+            "nota_ac": para_float(valor(linha, "nota_ac")),
+            "nota_pt": para_float(valor(linha, "nota_pt")),
+            "nota_ap": para_float(valor(linha, "nota_ap")),
+        })
+
+    if not linhas:
+        return None, "Nenhuma linha com nome de aluno foi encontrada no ficheiro."
+
+    return linhas, None
+
+
+def _localizar_aluno(matricula, nome, classe):
+    """Tenta encontrar o aluno correspondente. Devolve (aluno_exato, aluno_semelhante)."""
+    if matricula:
+        aluno = Aluno.query.filter_by(codigo_estudante=matricula, deleted_at=None).first()
+        if aluno:
+            return aluno, None
+
+    candidatos_query = Aluno.query.filter_by(deleted_at=None)
+    if classe:
+        classe_obj = Classe.query.filter_by(nome=classe, deleted_at=None).first() \
+            or (Classe.query.filter_by(numero=int(classe), deleted_at=None).first() if classe.isdigit() else None)
+        if classe_obj:
+            candidatos_query = candidatos_query.filter_by(classe_id=classe_obj.id)
+    candidatos = candidatos_query.all()
+
+    nome_normalizado = _normalizar(nome)
+    for candidato in candidatos:
+        if _normalizar(candidato.nome) == nome_normalizado:
+            return candidato, None
+
+    nomes_candidatos = {c.nome: c for c in candidatos}
+    semelhantes = get_close_matches(nome, list(nomes_candidatos.keys()), n=1, cutoff=0.75)
+    if semelhantes:
+        return None, nomes_candidatos[semelhantes[0]]
+
+    return None, None
+
+
+def _registar_pendencia(tipo, arquivo_nome, dados, nome_banco=None, descricao=""):
+    pendencia = PendenciaPauta(
+        arquivo=arquivo_nome,
+        classe=dados["classe"],
+        turma=dados["turma"],
+        periodo=dados["periodo"],
+        tipo=tipo,
+        descricao=descricao,
+        nome_excel=dados["nome"],
+        nome_banco=nome_banco,
+        status='pendente',
+    )
+    db.session.add(pendencia)
+    db.session.flush()
+
+    db.session.add(NotaTemporaria(
+        pendencia_id=pendencia.id,
+        aluno_id=None,
+        disciplina=dados["disciplina"],
+        classe=dados["classe"],
+        turma=dados["turma"],
+        periodo=dados["periodo"],
+        nota_ac=dados["nota_ac"],
+        nota_pt=dados["nota_pt"],
+        nota_ap=dados["nota_ap"],
+    ))
+    return pendencia
+
+
+def _processar_linha_pauta(dados, arquivo_nome):
+    """Classifica e regista uma linha do Excel. Devolve o resultado: 'importado',
+    'duplicado', 'nome', 'novo' ou 'ignorado' (dados incompletos)."""
+    if not dados["disciplina"]:
+        return "ignorado"
+
+    aluno_exato, aluno_semelhante = _localizar_aluno(dados["matricula"], dados["nome"], dados["classe"])
+
+    if aluno_exato:
+        nota_existente = Nota.query.filter_by(
+            aluno_id=aluno_exato.id,
+            disciplina=dados["disciplina"],
+            classe=dados["classe"],
+            turma=dados["turma"],
+            periodo=dados["periodo"],
+        ).first()
+
+        if nota_existente:
+            _registar_pendencia(
+                "duplicado", arquivo_nome, dados,
+                nome_banco=aluno_exato.nome,
+                descricao=(f"Já existe uma nota de {dados['disciplina']} para {aluno_exato.nome} "
+                            f"neste período. Confirme se pretende substituir a nota atual."),
+            )
+            return "duplicado"
+
+        db.session.add(Nota(
+            aluno_id=aluno_exato.id,
+            disciplina=dados["disciplina"],
+            classe=dados["classe"],
+            turma=dados["turma"],
+            periodo=dados["periodo"],
+            nota_ac=dados["nota_ac"],
+            nota_pt=dados["nota_pt"],
+            nota_ap=dados["nota_ap"],
+        ))
+        return "importado"
+
+    if aluno_semelhante:
+        _registar_pendencia(
+            "nome", arquivo_nome, dados,
+            nome_banco=aluno_semelhante.nome,
+            descricao=(f'O nome "{dados["nome"]}" não corresponde exatamente a nenhum aluno registado. '
+                        f'Encontrámos um nome parecido — confirme se é o mesmo aluno.'),
+        )
+        return "nome"
+
+    _registar_pendencia(
+        "novo", arquivo_nome, dados,
+        descricao=f'O aluno "{dados["nome"]}" não foi encontrado na base de dados. Pode registá-lo como novo aluno.',
+    )
+    return "novo"
 
 
 @controle_bp.route('/admin/banner', methods=['POST'])
@@ -484,7 +722,6 @@ def atualizar_contacto():
     email = request.form.get('email', '').strip()
     telefone = request.form.get('telefone', '').strip()
     telefone = ''.join(ch for ch in telefone if ch.isdigit())[:9]
-    telefone = f"+258{telefone}" if telefone else ''
 
     contacto = Contacto.query.first()
     if not contacto:
@@ -505,6 +742,43 @@ def atualizar_contacto():
 
     return redirect(url_for('controle.central_verificacao'))
 
+
+@controle_bp.route('/admin/estatisticas', methods=['POST'])
+@login_required
+def atualizar_estatisticas():
+    try:
+        ids = request.form.getlist('id')
+        labels = request.form.getlist('label')
+        valores = request.form.getlist('valor')
+        sufixos = request.form.getlist('sufixo')
+
+        if not ids:
+            flash('Nenhuma estat?stica foi recebida.', 'estatisticas')
+            return redirect(url_for('controle.central_verificacao'))
+
+        itens = EstatisticaPagina.query.order_by(EstatisticaPagina.id.asc()).all()
+        itens_por_id = {str(item.id): item for item in itens}
+        for idx, stat_id in enumerate(ids):
+            item = itens_por_id.get(str(stat_id))
+            if not item:
+                continue
+            if idx < len(labels):
+                item.label = labels[idx].strip()[:120] or item.label
+            if idx < len(valores):
+                try:
+                    item.valor = int(float(valores[idx]))
+                except (TypeError, ValueError):
+                    pass
+            if idx < len(sufixos):
+                item.sufixo = sufixos[idx].strip()[:20]
+
+        db.session.commit()
+        flash('Estat?sticas guardadas com sucesso!', 'estatisticas')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao guardar estat?sticas: {str(e)}', 'estatisticas')
+
+    return redirect(url_for('controle.central_verificacao'))
 
 @controle_bp.route('/admin/faq', methods=['POST'])
 @login_required
@@ -567,56 +841,61 @@ def publicar_aviso():
     return redirect(url_for('controle.central_verificacao'))
 
 
+@controle_bp.route('/admin/pautas', methods=['GET'])
+@login_required
+def listar_pautas():
+    pautas = PautaTurma.query.filter_by(ativo=True).order_by(PautaTurma.data_publicacao.desc()).all()
+    return render_template('pauta.html', publicacoes=pautas, modo_pauta_aberto=True)
+
 @controle_bp.route('/admin/upload-pauta', methods=['POST'])
 @login_required
 def upload_pauta():
     tipo_pauta = request.form.get('tipo_pauta', '').strip() or 'turmas'
-    ficheiros = request.files.getlist('arquivo_pauta')
-    subpasta = _subpasta_para_tipo_pauta(tipo_pauta)
+    ficheiros = [f for f in request.files.getlist('arquivo_pauta') if f and f.filename]
 
     if not ficheiros:
         flash('Seleciona pelo menos um ficheiro Excel.', 'pauta')
         return redirect(url_for('controle.central_verificacao'))
 
-    recebidos = 0
-    guardados = 0
+    total_processados = 0
+    mensagens_erro = []
 
     for arquivo in ficheiros:
-        if not arquivo or not arquivo.filename:
+        nome_original = secure_filename(arquivo.filename)
+        if not _extension_excel(nome_original):
+            mensagens_erro.append(f'"{arquivo.filename}": apenas ficheiros Excel (.xlsx ou .xls) s?o aceites.')
             continue
 
-        recebidos += 1
-        nome_arquivo, erro = _guardar_upload_excel(arquivo, subpasta=subpasta)
-        if erro:
-            flash(erro, 'pauta')
-            continue
-
-        guardados += 1
-        pendencia = PendenciaPauta(
-            arquivo=nome_arquivo,
-            classe=tipo_pauta if tipo_pauta != 'notas' else 'controle',
-            turma=None,
-            grupo=None,
-            periodo=None,
-            tipo=tipo_pauta,
-            descricao=f'Ficheiro Excel recebido para validação. Pasta: {subpasta}.',
-            nome_excel=nome_arquivo,
-            status='pendente',
-        )
-        db.session.add(pendencia)
-
-    if guardados:
         try:
+            conteudo = arquivo.read()
+            pauta = PautaTurma(
+                titulo=os.path.splitext(nome_original)[0],
+                tipo=tipo_pauta,
+                categoria='Turmas' if tipo_pauta == 'turmas' else 'Notas',
+                classe=None,
+                turma=None,
+                periodo=None,
+                arquivo=nome_original,
+                ficheiro=conteudo,
+                mimetype=arquivo.mimetype or 'application/octet-stream',
+                ativo=True,
+            )
+            db.session.add(pauta)
             db.session.commit()
-            flash(f'{guardados} ficheiro(s) Excel recebido(s) com sucesso.', 'pauta')
+            total_processados += 1
         except Exception as e:
             db.session.rollback()
-            flash(f'Erro ao registar a pauta recebida: {str(e)}', 'pauta')
-    else:
-        flash('Nenhum ficheiro Excel válido foi enviado.', 'pauta')
+            mensagens_erro.append(f'"{arquivo.filename}": erro ao guardar ? {str(e)}')
+
+    for msg in mensagens_erro:
+        flash(msg, 'pauta')
+
+    if total_processados:
+        flash(f'{total_processados} ficheiro(s) Excel guardado(s) com sucesso.', 'pauta')
+    elif not mensagens_erro:
+        flash('Nenhum ficheiro Excel v?lido foi enviado.', 'pauta')
 
     return redirect(url_for('controle.central_verificacao'))
-
 
 @controle_bp.route('/admin/grupos', methods=['POST'])
 @login_required
@@ -702,25 +981,28 @@ def atualizar_carrossel():
 def substituir_pauta():
     pendencia_id = request.form.get('id')
     if not pendencia_id:
-        flash('Identificador de pendência inválido.', 'erro')
+        flash('Identificador de pendência inválido.', 'pendencia-erro')
         return redirect(url_for('controle.central_verificacao'))
 
     pendencia = PendenciaPauta.query.get(pendencia_id)
     if not pendencia:
-        flash('Registo de pendência não encontrado.', 'erro')
+        flash('Registo de pendência não encontrado.', 'pendencia-erro')
         return redirect(url_for('controle.central_verificacao'))
 
     try:
-        Nota.query.filter_by(
-            classe=pendencia.classe,
-            turma=pendencia.turma,
-            grupo=pendencia.grupo,
-            periodo=pendencia.periodo
-        ).delete(synchronize_session=False)
-
         notas_temp = NotaTemporaria.query.filter_by(pendencia_id=pendencia.id).all()
         for nt in notas_temp:
-            nova_nota = Nota(
+            # Substitui apenas a nota deste aluno + disciplina + período —
+            # nunca as restantes notas da turma.
+            Nota.query.filter_by(
+                aluno_id=nt.aluno_id,
+                disciplina=nt.disciplina,
+                classe=nt.classe,
+                turma=nt.turma,
+                periodo=nt.periodo
+            ).delete(synchronize_session=False)
+
+            db.session.add(Nota(
                 aluno_id=nt.aluno_id,
                 disciplina=nt.disciplina,
                 classe=nt.classe,
@@ -729,18 +1011,17 @@ def substituir_pauta():
                 nota_ac=nt.nota_ac,
                 nota_pt=nt.nota_pt,
                 nota_ap=nt.nota_ap
-            )
-            db.session.add(nova_nota)
+            ))
 
         NotaTemporaria.query.filter_by(pendencia_id=pendencia.id).delete(synchronize_session=False)
         pendencia.status = 'resolvido'
 
         db.session.commit()
-        flash('Pauta substituída com sucesso!', 'sucesso')
+        flash('Pauta substituída com sucesso!', 'pendencia-sucesso')
 
     except Exception as e:
         db.session.rollback()
-        flash(f'Erro ao processar a substituição: {str(e)}', 'erro')
+        flash(f'Erro ao processar a substituição: {str(e)}', 'pendencia-erro')
 
     return redirect(url_for('controle.central_verificacao'))
 
@@ -750,12 +1031,12 @@ def substituir_pauta():
 def ignorar_pauta():
     pendencia_id = request.form.get('id')
     if not pendencia_id:
-        flash('Identificador de pendência inválido.', 'erro')
+        flash('Identificador de pendência inválido.', 'pendencia-erro')
         return redirect(url_for('controle.central_verificacao'))
 
     pendencia = PendenciaPauta.query.get(pendencia_id)
     if not pendencia:
-        flash('Pendência não encontrada.', 'erro')
+        flash('Pendência não encontrada.', 'pendencia-erro')
         return redirect(url_for('controle.central_verificacao'))
 
     try:
@@ -763,11 +1044,11 @@ def ignorar_pauta():
         pendencia.status = 'ignorado'
 
         db.session.commit()
-        flash('A alteração foi descartada. A pauta original foi mantida.', 'sucesso')
+        flash('A alteração foi descartada. A pauta original foi mantida.', 'pendencia-sucesso')
 
     except Exception as e:
         db.session.rollback()
-        flash(f'Erro ao ignorar pauta: {str(e)}', 'erro')
+        flash(f'Erro ao ignorar pauta: {str(e)}', 'pendencia-erro')
 
     return redirect(url_for('controle.central_verificacao'))
 
@@ -779,17 +1060,17 @@ def confirmar_aluno():
     id_aluno = request.form.get('id_aluno')
 
     if not pendencia_id or not id_aluno:
-        flash('Por favor, informe o ID correto do aluno.', 'erro')
+        flash('Por favor, informe o ID correto do aluno.', 'pendencia-erro')
         return redirect(url_for('controle.central_verificacao'))
 
     aluno_existe = Aluno.query.get(id_aluno)
     if not aluno_existe:
-        flash(f'Aluno com ID {id_aluno} não foi encontrado na base de dados.', 'erro')
+        flash(f'Aluno com ID {id_aluno} não foi encontrado na base de dados.', 'pendencia-erro')
         return redirect(url_for('controle.central_verificacao'))
 
     pendencia = PendenciaPauta.query.get(pendencia_id)
     if not pendencia:
-        flash('Pendência não encontrada.', 'erro')
+        flash('Pendência não encontrada.', 'pendencia-erro')
         return redirect(url_for('controle.central_verificacao'))
 
     try:
@@ -811,11 +1092,11 @@ def confirmar_aluno():
         pendencia.status = 'resolvido'
 
         db.session.commit()
-        flash(f'Notas associadas com sucesso ao aluno ID {id_aluno}.', 'sucesso')
+        flash(f'Notas associadas com sucesso ao aluno ID {id_aluno}.', 'pendencia-sucesso')
 
     except Exception as e:
         db.session.rollback()
-        flash(f'Erro ao associar aluno: {str(e)}', 'erro')
+        flash(f'Erro ao associar aluno: {str(e)}', 'pendencia-erro')
 
     return redirect(url_for('controle.central_verificacao'))
 
@@ -825,12 +1106,12 @@ def confirmar_aluno():
 def adicionar_aluno():
     pendencia_id = request.form.get('id')
     if not pendencia_id:
-        flash('Identificador de pendência inválido.', 'erro')
+        flash('Identificador de pendência inválido.', 'pendencia-erro')
         return redirect(url_for('controle.central_verificacao'))
 
     pendencia = PendenciaPauta.query.get(pendencia_id)
     if not pendencia or not pendencia.nome_excel:
-        flash('Não foi possível obter os dados do aluno a partir da pendência.', 'erro')
+        flash('Não foi possível obter os dados do aluno a partir da pendência.', 'pendencia-erro')
         return redirect(url_for('controle.central_verificacao'))
 
     try:
@@ -856,11 +1137,11 @@ def adicionar_aluno():
         pendencia.status = 'resolvido'
 
         db.session.commit()
-        flash(f'Aluno "{pendencia.nome_excel}" registado e notas importadas com sucesso!', 'sucesso')
+        flash(f'Aluno "{pendencia.nome_excel}" registado e notas importadas com sucesso!', 'pendencia-sucesso')
 
     except Exception as e:
         db.session.rollback()
-        flash(f'Erro ao registar novo aluno: {str(e)}', 'erro')
+        flash(f'Erro ao registar novo aluno: {str(e)}', 'pendencia-erro')
 
     return redirect(url_for('controle.central_verificacao'))
 
