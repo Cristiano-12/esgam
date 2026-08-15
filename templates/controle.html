@@ -170,9 +170,7 @@
 
                             <label>Mensagem</label>
 
-                            <textarea rows="5" name="mensagem" maxlength="40" required>
-                                {{ banner.mensagem }}
-                            </textarea>
+                            <textarea rows="5" name="mensagem" maxlength="40" required>{{ banner.mensagem }}</textarea>
 
                         </div>
 
@@ -207,9 +205,7 @@
 
                             <label>Texto</label>
 
-                            <textarea rows="7" name="texto" maxlength="220">
-                                {{ sobre.texto }}
-                            </textarea>
+                            <textarea rows="7" name="texto" maxlength="220">{{ sobre.texto }}</textarea>
 
                         </div>
 
@@ -305,7 +301,7 @@
 
                 <section class="card">
 
-                    <h2>Mensagem do Diretor</h2>
+                    <h2>Mensagem da Direção</h2>
 
                     {% with messages = get_flashed_messages(category_filter=["diretor"]) %}
                     {% if messages %}
@@ -332,8 +328,7 @@
 
                             <label>Mensagem</label>
 
-                            <textarea rows="8" name="texto" maxlength="220">{{ diretor.texto }}
-                                </textarea>
+                            <textarea rows="8" name="texto" maxlength="220">{{ diretor.texto }}</textarea>
 
                         </div>
 
@@ -386,8 +381,7 @@
 
                         <div class="form-group">
                             <label>Mensagem</label>
-                            <textarea name="texto" rows="6" maxlength="260" placeholder="Escreva o comunicado..." required>
-                            </textarea>
+                            <textarea name="texto" rows="6" maxlength="260" placeholder="Escreva o comunicado..." required></textarea>
                         </div>
 
                         <button type="submit" class="btn-primary">
@@ -690,8 +684,7 @@
 
                         <div class="form-group">
                             <label for="msgAviso">Mensagem</label>
-                            <textarea id="msg-aviso" name="mensagem" maxlength="100" placeholder="Digite o aviso..." required>
-                                    </textarea>
+                            <textarea id="msg-aviso" name="mensagem" maxlength="100" placeholder="Digite o aviso..." required></textarea>
                         </div>
 
                         <button type="submit" class="btn-primary">

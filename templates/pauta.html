@@ -3,251 +3,356 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Publicações - ESGAM</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='controle.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='global.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='controle.css') }}">
     <style>
-        .pauta-gallery {
+
+        .consulta-header {
+            margin-bottom: 16px;
+            padding: 0 4px;
+        }
+
+        .consulta-header h2 {
+            font-size: clamp(1.1rem, 4.5vw, 1.5rem);
+        }
+
+        /* Layout: lista + leitor */
+        .pauta-layout {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 28px;
-            margin-top: 28px;
-        }
-
-        .pauta-card {
-            padding: 0;
-            overflow: hidden;
-        }
-
-        .pauta-sheet {
+            grid-template-columns: minmax(200px, 260px) 1fr;
+            gap: 14px;
+            margin-top: 12px;
+            align-items: start;
             width: 100%;
-            border-radius: 18px;
-            overflow: hidden;
-            border: 1px solid #dbe4ee;
-            background: linear-gradient(180deg, #fdfdfd 0%, #f7fafc 100%);
-            box-shadow: 0 18px 36px rgba(15, 23, 42, 0.12);
         }
 
-        .pauta-sheet-head {
-            padding: 14px 16px 12px;
-            border-bottom: 1px solid #e5eef7;
+        .pauta-lista {
+            max-height: 65vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
-        .pauta-kicker {
-            font-size: 0.76rem;
-            letter-spacing: .14em;
-            text-transform: uppercase;
-            color: #64748b;
-            margin-bottom: 6px;
-        }
-
-        .pauta-sheet-title {
-            margin: 0;
-            font-size: clamp(0.98rem, 1.2vw, 1.15rem);
-        }
-
-        .pauta-sheet-subtitle {
-            margin: 4px 0 0;
-            color: #64748b;
-            font-size: 0.84rem;
-        }
-
-        .pauta-preview {
-            padding: 0;
-        }
-
-        .pauta-table {
+        .pauta-lista .doc-item {
             width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed;
-            font-size: clamp(0.74rem, 0.9vw, 0.9rem);
-            background: #fff;
-        }
-
-        .pauta-table th,
-        .pauta-table td {
-            border: 1px solid #e2e8f0;
-            padding: 9px 10px;
             text-align: left;
-            vertical-align: top;
-            word-break: break-word;
+            white-space: normal;
+            line-height: 1.35;
+            font-size: 0.9rem;
         }
 
-        .pauta-table th {
-            background: #f8fafc;
-            font-weight: 700;
+        .pauta-lista .doc-item small {
+            display: block;
+            margin-top: 4px;
+            font-weight: 400;
+            opacity: 0.9;
+            font-size: 0.78rem;
         }
 
-        .pauta-meta {
+        .pauta-reader-toolbar {
             display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            align-items: center;
             flex-wrap: wrap;
-        }
-
-        .pauta-topbar {
-            display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            gap: 12px;
-            padding: 14px 16px 10px;
-            border-bottom: 1px solid #e5eef7;
-            background: rgba(255, 255, 255, 0.78);
-            backdrop-filter: blur(10px);
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
         }
 
-        .pauta-download {
+        .pauta-reader-toolbar h2 {
+            margin: 0;
+            font-size: clamp(0.9rem, 3.5vw, 1.05rem);
+            line-height: 1.3;
+            overflow-wrap: anywhere;
+            flex: 1 1 140px;
+        }
+
+        .pauta-zoom-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .pauta-zoom-controls .btn-secondary,
+        .pauta-zoom-controls .btn-primary,
+        .pauta-download-bar a.btn-primary {
+            width: auto !important;
+            min-width: 2.4rem;
+            padding: 8px 12px !important;
+            text-decoration: none;
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
             flex: 0 0 auto;
-            font-size: 0.76rem;
-            padding: 7px 11px;
-            border-radius: 999px;
-            line-height: 1;
+            font-size: 0.88rem;
         }
 
-        .pauta-actions {
+        .pauta-download-bar {
             display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            align-items: center;
             flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
         }
 
-        .pauta-date {
+        .pauta-zoom-level {
+            min-width: 2.8em;
+            text-align: center;
+            font-size: 0.82rem;
             color: #64748b;
-            font-size: 0.92rem;
+            font-weight: 600;
         }
 
-        @media (max-width: 768px) {
-            .pauta-gallery {
+        /* Área do documento: só aqui há scroll horizontal */
+        .pauta-stage {
+            width: 100%;
+            max-width: 100%;
+            max-height: min(65vh, 560px);
+            overflow: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background: #e2e8f0;
+            padding: 6px;
+            -webkit-overflow-scrolling: touch;
+            box-sizing: border-box;
+            overscroll-behavior: contain;
+        }
+
+        .pauta-stage [data-zoom-target] {
+            transform-origin: top left;
+            transition: transform .12s ease;
+            display: inline-block;
+            background: #fff;
+            border-radius: 6px;
+            box-shadow: 0 4px 16px rgb(15 23 42 / 10%);
+        }
+
+        .pauta-stage table {
+            border-collapse: collapse;
+            font-size: 11px;
+            white-space: nowrap;
+            width: max-content;
+            max-width: none;
+        }
+
+        .pauta-stage th,
+        .pauta-stage td {
+            border: 1px solid #cbd5e1;
+            padding: 4px 6px;
+            text-align: center;
+            vertical-align: middle;
+            color: #0f172a;
+        }
+
+        .pauta-stage tr:nth-child(-n+6) td {
+            background: #f1f5f9;
+            font-weight: 600;
+        }
+
+        .pauta-stage tr:nth-child(even) td {
+            background: #fafafa;
+        }
+
+        .pauta-stage tr:nth-child(-n+6):nth-child(even) td {
+            background: #e2e8f0;
+        }
+
+        .pauta-empty {
+            text-align: center;
+            padding: 32px 14px;
+        }
+
+        .pauta-hint {
+            margin-top: 8px;
+            font-size: 0.78rem;
+            color: #64748b;
+        }
+
+        /* ——— Telemóveis ——— */
+        @media (max-width: 900px) {
+            .pauta-layout {
                 grid-template-columns: 1fr;
-                gap: 18px;
+                gap: 12px;
             }
 
-            .pauta-card {
-                padding: 14px;
+            .pauta-lista {
+                max-height: 28vh;
             }
 
-            .pauta-preview {
-                padding: 12px;
+            .pauta-stage {
+                max-height: min(52vh, 420px);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .dashboard {
+                padding: 12px 8px 24px;
             }
 
-            .pauta-topbar {
-                align-items: stretch;
+
+            .pauta-lista {
+                max-height: 26vh;
+            }
+
+            .pauta-stage {
+                max-height: 48vh;
+                padding: 4px;
+                border-radius: 10px;
+            }
+
+            .pauta-stage table {
+                font-size: 9.5px;
+            }
+
+            .pauta-stage th,
+            .pauta-stage td {
+                padding: 3px 5px;
+            }
+
+            .pauta-reader-toolbar {
                 flex-direction: column;
+                align-items: stretch;
             }
 
-            .pauta-download {
-                align-self: flex-start;
+            .pauta-zoom-controls {
+                justify-content: space-between;
+            }
+
+            .pauta-download-bar a.btn-primary {
+                width: 100% !important;
             }
         }
     </style>
 </head>
 
 <body>
+    <a href="{{ url_for('index.pagina_inicial') }}" class="top-corner-link" aria-label="Voltar">
+        <span aria-hidden="true">←</span>
+    </a>
+
     <header class="main-header">
-        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo da ESGAM" class="logo">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo ESGAM" class="logo">
     </header>
 
     <main class="dashboard">
         <div class="form-container">
+
             <header class="consulta-header">
-                <h2>Publicações</h2>
+                <h2>Publicações e Pautas</h2>
                 <p class="card-subtitle">
-                    Consulte os documentos oficiais publicados pela Escola Secundária Geral de Alto Molócuè.
-                    Os conteúdos são disponibilizados em PDF e organizados por categoria.
+                    Documentos oficiais da Escola Secundária Geral de Alto Molócuè.
                 </p>
             </header>
 
             {% if modo_pauta_aberto %}
-            <section class="card" style="background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);">
-                <h2 style="margin-bottom: 8px;">Vitrine de Documentos</h2>
-                <p class="card-subtitle">
-                    Aqui ficam disponíveis editais, listas, pautas públicas, calendários, comunicados e outros
-                    documentos oficiais, incluindo turmas.
-                </p>
-            </section>
+                {% if publicacoes %}
 
-            {% if publicacoes %}
-            <div class="pauta-gallery">
-                {% for item in publicacoes %}
-                <section class="card pauta-card">
-                    <div class="pauta-sheet">
-                        <div class="pauta-topbar">
-                            <div>
-                                <div class="pauta-kicker">Documento</div>
-                                <h3 class="pauta-sheet-title">Documento</h3>
-                                <p class="pauta-sheet-subtitle">Folha enviada para consulta pública</p>
+                <div class="pauta-layout">
+
+                    <section class="card pauta-lista">
+                        <h2>Documentos</h2>
+                        <p class="card-subtitle">
+                            {{ publicacoes|length }} disponível{{ 'eis' if publicacoes|length != 1 else '' }}
+                        </p>
+                        <div class="vertical-actions">
+                            {% for item in publicacoes %}
+                            <button type="button"
+                                class="btn {% if loop.first %}btn-primary{% else %}btn-secondary{% endif %} doc-item"
+                                data-doc-id="{{ item.id }}"
+                                data-titulo="{{ item.titulo }}"
+                                data-download="{{ url_for('pauta.descarregar_ficheiro', pauta_id=item.id) }}"
+                                onclick="abrirDocumento(this)">
+                                <strong>{{ item.titulo }}</strong>
+                                <small>
+                                    {{ item.descricao }}
+                                    {% if item.tem_preview %} · {{ item.total_linhas }} linhas{% endif %}
+                                </small>
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </section>
+
+                    <section class="card">
+                        <div class="pauta-reader-toolbar">
+                            <h2 id="reader-title">{{ publicacoes[0].titulo }}</h2>
+                            <div class="pauta-zoom-controls">
+                                <button type="button" class="btn-secondary" onclick="ajustarZoom(-0.1)" aria-label="Diminuir zoom">−</button>
+                                <span id="zoom-level" class="pauta-zoom-level">100%</span>
+                                <button type="button" class="btn-secondary" onclick="ajustarZoom(0.1)" aria-label="Aumentar zoom">+</button>
+                                <button type="button" class="btn-secondary" onclick="resetZoom()" aria-label="Repor zoom">100%</button>
                             </div>
-                            <a href="{{ url_for('pauta.descarregar_ficheiro', pauta_id=item.id) }}"
-                                target="_blank" class="btn-primary pauta-download" aria-label="Baixar documento">
-                                Baixar
+                        </div>
+
+                        <div class="pauta-download-bar">
+                            <a id="reader-download"
+                               class="btn-primary"
+                               href="{{ url_for('pauta.descarregar_ficheiro', pauta_id=publicacoes[0].id) }}"
+                               target="_blank"
+                               rel="noopener">
+                                Descarregar documento
                             </a>
                         </div>
 
-                        {% if item.tem_preview %}
-                        <div class="pauta-preview">
-                            <table class="pauta-table">
-                                <thead>
-                                    <tr>
-                                        {% for cab in item.preview_cabecalho %}
-                                        <th>{{ cab }}</th>
-                                        {% endfor %}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for linha in item.preview_linhas %}
-                                    <tr>
-                                        {% for celula in linha %}
-                                        <td>{{ celula }}</td>
-                                        {% endfor %}
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        {% else %}
-                        <div class="pauta-preview" style="text-align:center; color:#64748b; padding: 28px 18px;">
-                            Não foi possível gerar pré-visualização desta folha.
-                        </div>
-                        {% endif %}
-                        <div class="pauta-meta" style="padding: 14px 16px 16px; border-top: 1px solid #e5eef7;">
-                            <div class="pauta-date">
-                                {{ item.data_publicacao.strftime('%d/%m/%Y') if item.data_publicacao else 'Sem data' }}
+                        <div class="pauta-stage" id="reader-stage">
+                            {% for item in publicacoes %}
+                            <div class="doc-view" id="doc-{{ item.id }}" {% if not loop.first %}hidden{% endif %}>
+                                {% if item.tem_preview %}
+                                <div data-zoom-target>
+                                    <table>
+                                        <tbody>
+                                            {% for linha in item.grelha %}
+                                            <tr>
+                                                {% for celula in linha %}
+                                                <td>{{ celula }}</td>
+                                                {% endfor %}
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <div class="pauta-empty">
+                                    <p class="card-subtitle">
+                                        Pré-visualização indisponível. Use <strong>Descarregar documento</strong>.
+                                    </p>
+                                </div>
+                                {% endif %}
                             </div>
+                            {% endfor %}
                         </div>
-                    </div>
+                        <p class="pauta-hint">Deslize na tabela para ver todas as colunas. Use − / + para zoom.</p>
+                    </section>
+
+                </div>
+
+                {% else %}
+                <section class="card" style="text-align: center; margin-top: 20px;">
+                    <h2>Ainda não existem publicações</h2>
+                    <p class="card-subtitle">Quando a escola publicar documentos, eles aparecerão aqui.</p>
                 </section>
-                {% endfor %}
-            </div>
+                {% endif %}
             {% else %}
-            <section class="card" style="text-align: center; margin-top: 24px;">
-                <h2>Ainda não existem publicações oficiais</h2>
-                <p class="card-subtitle">
-                    Quando a escola publicar documentos oficiais, eles aparecerão aqui automaticamente.
-                </p>
-            </section>
-            {% endif %}
-            {% else %}
-            <section class="card" style="text-align: center;">
+            <section class="card" style="text-align: center; margin-top: 20px;">
                 <h2>Consulta pública encerrada</h2>
-                <p class="card-subtitle">
-                    As publicações oficiais estão encerradas neste momento.
-                    Utilize o portal do aluno para consultar informações académicas.
-                </p>
+                <p class="card-subtitle">As publicações estão encerradas neste momento.</p>
             </section>
             {% endif %}
 
-            <div style="margin-top: 30px; text-align: center;">
+            <div style="margin-top: 24px; text-align: center;">
                 <a href="{{ url_for('index.pagina_inicial') }}" class="btn-secondary btn-back"
-                    style="text-decoration: none; display: inline-block;">
+                   style="text-decoration: none; display: inline-block; width: auto;">
                     Voltar para a página inicial
                 </a>
             </div>
         </div>
+
+        <footer class="main-footer">
+            <p>&copy; Escola Secundária Geral de Alto Molócuè. Todos os direitos reservados.</p>
+        </footer>
     </main>
+
+     <script src="{{ url_for('static', filename='index.js') }}"></script>
+
 </body>
 
 </html>
-
