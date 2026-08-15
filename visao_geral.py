@@ -4,6 +4,9 @@ from models import db, Aluno, Classe, Turma, Grupo, Banner, ConfiguracaoSistema
 
 visao_bp = Blueprint('visao_geral', __name__)
 
+# Senha fixa de acesso ao portal do aluno (igual para todos)
+SENHA_PORTAL_ALUNO = "ESGAM000"
+
 
 def login_required(f):
     """Decorator para restrição de acesso a administradores autenticados."""
@@ -16,25 +19,19 @@ def login_required(f):
     return decorated_function
 
 
-# ==========================================
-# ROTA PRINCIPAL: CENTRAL DE VERIFICAÇÃO / VISÃO GERAL
-# ==========================================
-
 @visao_bp.route('/admin/central', methods=['GET'])
 @login_required
 def central_verificacao():
     """
-    Exibe dados consolidados do sistema, métricas, avisos e permite
-    a filtragem e pesquisa de estudantes na base de dados.
+    Visão geral: métricas, filtros e pesquisa de alunos por ID interno
+    ou código de estudante (ESG-XXXXXX).
     """
-    # 1. Métricas Globais (Contagem via SQLAlchemy ORM)
     total_aluno = Aluno.query.filter_by(deleted_at=None).count()
     total_classes = Classe.query.filter_by(deleted_at=None).count()
     total_turmas = Turma.query.filter_by(deleted_at=None).count()
     total_grupos = Grupo.query.filter_by(deleted_at=None).count()
     total_avisos = Banner.query.count()
 
-    # 2. Configurações Globais do Sistema
     config = ConfiguracaoSistema.query.first()
     if not config:
         config = ConfiguracaoSistema()
@@ -47,7 +44,7 @@ def central_verificacao():
     estado_consulta_publica = "Aberto" if portal_pauta_aberto else "Fechado"
     estado_portal_estudante = "Aberto" if portal_notas_aberto else "Fechado"
 
-    # 3. Filtragem da Tabela Geral de Alunos
+    # --- Filtros da listagem ---
     classe_filtro = request.args.get('classe_filtro', '').strip()
     grupo_filtro = request.args.get('grupo_filtro', '').strip()
     turma_filtro = request.args.get('turma', '').strip()
@@ -55,25 +52,53 @@ def central_verificacao():
     query_alunos = Aluno.query.filter_by(deleted_at=None)
 
     if classe_filtro:
-        query_alunos = query_alunos.join(Classe).filter(Classe.nome == classe_filtro)
+        # Aceita "10", "10ª Classe", etc.
+        if classe_filtro.isdigit():
+            query_alunos = query_alunos.join(Classe).filter(
+                (Classe.numero == int(classe_filtro)) | (Classe.nome == classe_filtro)
+            )
+        else:
+            query_alunos = query_alunos.join(Classe).filter(Classe.nome == classe_filtro)
+
     if grupo_filtro:
         query_alunos = query_alunos.join(Grupo).filter(Grupo.nome == grupo_filtro)
+
     if turma_filtro:
         query_alunos = query_alunos.join(Turma).filter(Turma.nome == turma_filtro)
 
-    alunos = query_alunos.order_by(Aluno.nome.asc()).limit(50).all()
+    alunos = query_alunos.order_by(Aluno.nome.asc()).limit(100).all()
 
-    # 4. Pesquisa Específica por Código/ID de Aluno
+    # --- Pesquisa por ID interno ou código ESG-... ---
     pesquisa_id = request.args.get('pesquisa_id', '').strip()
     aluno_pesquisado = None
 
     if pesquisa_id:
+        # 1) ID numérico interno
         if pesquisa_id.isdigit():
-            aluno_pesquisado = Aluno.query.filter_by(id=int(pesquisa_id), deleted_at=None).first()
-        if not aluno_pesquisado:
-            aluno_pesquisado = Aluno.query.filter_by(codigo_estudante=pesquisa_id, deleted_at=None).first()
+            aluno_pesquisado = Aluno.query.filter_by(
+                id=int(pesquisa_id), deleted_at=None
+            ).first()
 
-    # 5. Avisos / Banners
+        # 2) Código de estudante (ex: ESG-A3F9K2)
+        if not aluno_pesquisado:
+            aluno_pesquisado = Aluno.query.filter_by(
+                codigo_estudante=pesquisa_id, deleted_at=None
+            ).first()
+
+        # 3) Busca parcial no código (sem diferenciar maiúsculas)
+        if not aluno_pesquisado:
+            aluno_pesquisado = Aluno.query.filter(
+                Aluno.deleted_at.is_(None),
+                Aluno.codigo_estudante.ilike(f"%{pesquisa_id}%"),
+            ).first()
+
+        # 4) Busca parcial no nome
+        if not aluno_pesquisado:
+            aluno_pesquisado = Aluno.query.filter(
+                Aluno.deleted_at.is_(None),
+                Aluno.nome.ilike(f"%{pesquisa_id}%"),
+            ).first()
+
     avisos_gerais = Banner.query.filter_by(status='normal', ativo=True).all()
     avisos_individuais = Banner.query.filter_by(status='urgente', ativo=True).all()
 
@@ -90,21 +115,17 @@ def central_verificacao():
         portal_pauta_aberto=portal_pauta_aberto,
         alunos=alunos,
         aluno_pesquisado=aluno_pesquisado,
+        senha_portal=SENHA_PORTAL_ALUNO,
         avisos_gerais=[b.mensagem for b in avisos_gerais],
-        avisos_individuais=[b.mensagem for b in avisos_individuais]
+        avisos_individuais=[b.mensagem for b in avisos_individuais],
     )
 
-
-# ==========================================
-# ROTA POST: CONTROLO DE ACESSO AO SISTEMA
-# ==========================================
 
 @visao_bp.route('/admin/controlar-sistema', methods=['POST'])
 @login_required
 def controlar_sistema():
-    """Alterna os estados de visibilidade das pautas e do portal no sistema."""
     acao = request.form.get('acao')
-    
+
     config = ConfiguracaoSistema.query.first()
     if not config:
         config = ConfiguracaoSistema()
@@ -131,14 +152,9 @@ def controlar_sistema():
     return redirect(url_for('visao_geral.central_verificacao'))
 
 
-# ==========================================
-# ROTA GET: CONTROLO ESPECÍFICO (REDIRECIONAMENTO)
-# ==========================================
-
 @visao_bp.route('/admin/controlo-especifico', methods=['GET'])
 @login_required
 def controlo_especifico():
-    """Redireciona os filtros específicos da página central de volta para os parâmetros de consulta."""
     tipo = request.args.get('tipo')
     classe = request.args.get('classe')
     turma = request.args.get('turma')
@@ -147,11 +163,11 @@ def controlo_especifico():
 
     if tipo == 'aluno' and aluno_id:
         return redirect(url_for('visao_geral.central_verificacao', pesquisa_id=aluno_id))
-    elif tipo == 'classe' and classe:
+    if tipo == 'classe' and classe:
         return redirect(url_for('visao_geral.central_verificacao', classe_filtro=classe))
-    elif tipo == 'turma' and turma:
+    if tipo == 'turma' and turma:
         return redirect(url_for('visao_geral.central_verificacao', turma=turma))
-    elif tipo == 'grupo' and grupo:
+    if tipo == 'grupo' and grupo:
         return redirect(url_for('visao_geral.central_verificacao', grupo_filtro=grupo))
 
     return redirect(url_for('visao_geral.central_verificacao'))

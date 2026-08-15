@@ -153,6 +153,7 @@ def create_app():
         try:
             db.create_all()
             _garantir_colunas_pautas_turma(app)
+            _garantir_colunas_notas(app)
 
             # Cria o utilizador admin apenas se não estiver a rodar no Vercel (ambiente local)
             if not os.getenv("VERCEL"):
@@ -198,6 +199,30 @@ def _garantir_colunas_pautas_turma(app):
             app.logger.info("Tabela pautas_turma atualizada com colunas em falta: %s", ", ".join(alteracoes))
     except Exception:
         app.logger.exception("Não foi possível garantir o esquema de pautas_turma.")
+
+
+def _garantir_colunas_notas(app):
+    """Garante a coluna nota_exame nas tabelas de notas sem apagar dados."""
+    try:
+        engine = db.engine
+        insp = inspect(engine)
+        tabelas = {
+            "notas": "FLOAT",
+            "notas_temporarias": "FLOAT",
+        }
+        for tabela, tipo in tabelas.items():
+            if tabela not in insp.get_table_names():
+                continue
+            colunas = {col["name"] for col in insp.get_columns(tabela)}
+            if "nota_exame" not in colunas:
+                # SQLite usa REAL; PostgreSQL aceita FLOAT/DOUBLE PRECISION
+                col_type = "DOUBLE PRECISION" if str(engine.url).startswith("postgresql") else "REAL"
+                sql = f"ALTER TABLE {tabela} ADD COLUMN nota_exame {col_type}"
+                with engine.begin() as conn:
+                    conn.execute(text(sql))
+                app.logger.info("Coluna nota_exame adicionada à tabela %s", tabela)
+    except Exception:
+        app.logger.exception("Não foi possível garantir a coluna nota_exame.")
 
 
 app = create_app()

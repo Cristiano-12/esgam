@@ -329,3 +329,67 @@
   });
  
 });
+
+
+
+var zoomAtual = 1;
+
+function aplicarZoom() {
+    document.querySelectorAll('[data-zoom-target]').forEach(function (el) {
+        el.style.transform = 'scale(' + zoomAtual + ')';
+    });
+    var label = document.getElementById('zoom-level');
+    if (label) label.textContent = Math.round(zoomAtual * 100) + '%';
+}
+
+function ajustarZoom(delta) {
+    zoomAtual = Math.min(2.5, Math.max(0.25, +(zoomAtual + delta).toFixed(2)));
+    aplicarZoom();
+}
+
+function resetZoom() {
+    zoomAtual = (window.innerWidth < 480) ? 0.45 : 1;
+    aplicarZoom();
+}
+
+function trocarDocumento(sel) {
+    var opt = sel.options[sel.selectedIndex];
+    var id = opt.value;
+    var titulo = opt.getAttribute('data-titulo');
+    var download = opt.getAttribute('data-download');
+
+    document.querySelectorAll('.doc-view').forEach(function (el) {
+        el.hidden = true;
+    });
+    var view = document.getElementById('doc-' + id);
+    if (view) view.hidden = false;
+
+    var titleEl = document.getElementById('reader-title');
+    if (titleEl) titleEl.textContent = titulo || opt.text;
+
+    var dl = document.getElementById('reader-download');
+    if (dl && download) dl.href = download;
+
+    var stage = document.getElementById('reader-stage');
+    if (stage) { stage.scrollTop = 0; stage.scrollLeft = 0; }
+
+    resetZoom();
+}
+
+// Começa mais pequeno no telemóvel para caber mais colunas
+resetZoom();
+
+
+document.querySelectorAll('.btn-copiar-id').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        var codigo = btn.getAttribute('data-codigo') || '';
+        if (!codigo) return;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(codigo).then(function () {
+                var t = btn.textContent;
+                btn.textContent = 'Copiado!';
+                setTimeout(function () { btn.textContent = t; }, 1200);
+            });
+        }
+    });
+});

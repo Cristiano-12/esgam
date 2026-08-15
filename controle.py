@@ -1,4 +1,5 @@
 import logging
+import secrets
 import os
 import re
 import unicodedata
@@ -150,7 +151,7 @@ def obter_estatisticas():
             return 0
 
     defaults = [
-        ("ANO", "Ano de Funda??o", 2000.0, False, ""),
+        ("ANO", "Ano de Fundação", 2000.0, False, ""),
         ("ALUNO", "Alunos Registados", contar(Aluno), True, "+"),
         ("PROF", "Corpo Docente", contar(Professor), True, ""),
         ("TURMA", "Turmas Activas", contar(Turma), True, ""),
@@ -166,7 +167,7 @@ def obter_estatisticas():
     except Exception:
         db.session.rollback()
         return [
-            {"id": 1, "cod": "ANO", "label": "Ano de Funda??o", "valor": 2000, "animar": False, "sufixo": ""},
+            {"id": 1, "cod": "ANO", "label": "Ano de Fundação", "valor": 2000, "animar": False, "sufixo": ""},
             {"id": 2, "cod": "ALUNO", "label": "Alunos Registados", "valor": contar(Aluno), "animar": True, "sufixo": "+"},
             {"id": 3, "cod": "PROF", "label": "Corpo Docente", "valor": contar(Professor), "animar": True, "sufixo": ""},
             {"id": 4, "cod": "TURMA", "label": "Turmas Activas", "valor": contar(Turma), "animar": True, "sufixo": ""}
@@ -397,9 +398,10 @@ CABECALHOS_ESPERADOS = {
     "turma": ("turma",),
     "periodo": ("periodo", "período", "trimestre"),
     "disciplina": ("disciplina",),
-    "nota_ac": ("ac", "nota_ac", "notaac"),
-    "nota_pt": ("pt", "nota_pt", "notapt"),
-    "nota_ap": ("ap", "nota_ap", "notaap"),
+    "nota_ac": ("ac", "nota_ac", "notaac", "1p", "p1"),
+    "nota_pt": ("pt", "nota_pt", "notapt", "2p", "p2"),
+    "nota_ap": ("ap", "nota_ap", "notaap", "3p", "p3", "4p", "p4"),
+    "nota_exame": ("x", "exame", "nota_x", "notax", "exam", "nota exame"),
 }
 
 
@@ -478,6 +480,7 @@ def _ler_linhas_excel(conteudo_bytes):
             "nota_ac": para_float(valor(linha, "nota_ac")),
             "nota_pt": para_float(valor(linha, "nota_pt")),
             "nota_ap": para_float(valor(linha, "nota_ap")),
+            "nota_exame": para_float(valor(linha, "nota_exame")),
         })
 
     if not linhas:
@@ -514,15 +517,25 @@ def _localizar_aluno(matricula, nome, classe):
     return None, None
 
 
-def _registar_pendencia(tipo, arquivo_nome, dados, nome_banco=None, descricao=""):
+
+def _gerar_codigo_estudante_unico():
+    """Gera ID único e difícil de adivinhar (ex: ESG-A3F9K2)."""
+    for _ in range(50):
+        codigo = "ESG-" + secrets.token_hex(3).upper()
+        if not Aluno.query.filter_by(codigo_estudante=codigo).first():
+            return codigo
+    return "ESG-" + secrets.token_hex(8).upper()
+
+
+def _registar_pendencia(tipo, arquivo_nome, dados, nome_banco=None, descricao="", aluno_id=None):
     pendencia = PendenciaPauta(
         arquivo=arquivo_nome,
-        classe=dados["classe"],
-        turma=dados["turma"],
-        periodo=dados["periodo"],
+        classe=dados.get("classe"),
+        turma=dados.get("turma"),
+        periodo=dados.get("periodo"),
         tipo=tipo,
         descricao=descricao,
-        nome_excel=dados["nome"],
+        nome_excel=dados.get("nome"),
         nome_banco=nome_banco,
         status='pendente',
     )
@@ -531,68 +544,129 @@ def _registar_pendencia(tipo, arquivo_nome, dados, nome_banco=None, descricao=""
 
     db.session.add(NotaTemporaria(
         pendencia_id=pendencia.id,
-        aluno_id=None,
-        disciplina=dados["disciplina"],
-        classe=dados["classe"],
-        turma=dados["turma"],
-        periodo=dados["periodo"],
-        nota_ac=dados["nota_ac"],
-        nota_pt=dados["nota_pt"],
-        nota_ap=dados["nota_ap"],
+        aluno_id=aluno_id,
+        disciplina=dados.get("disciplina"),
+        classe=dados.get("classe"),
+        turma=dados.get("turma"),
+        periodo=dados.get("periodo"),
+        nota_ac=dados.get("nota_ac"),
+        nota_pt=dados.get("nota_pt"),
+        nota_ap=dados.get("nota_ap"),
+        nota_exame=dados.get("nota_exame"),
     ))
     return pendencia
 
 
+def _turma_ja_tem_notas(classe, turma, periodo):
+    """True se já existem notas para esta turma + período."""
+    q = Nota.query
+    if classe:
+        q = q.filter_by(classe=classe)
+    if turma:
+        q = q.filter_by(turma=turma)
+    if periodo:
+        q = q.filter_by(periodo=periodo)
+    return q.first() is not None
+
+
+def _criar_aluno_automatico(dados):
+    """Cria aluno com ID imprevisível. Senha de acesso = ESGAM000 (fixa para todos)."""
+    codigo = _gerar_codigo_estudante_unico()
+    aluno = Aluno(nome=dados["nome"], codigo_estudante=codigo)
+    if dados.get("classe"):
+        classe_str = str(dados["classe"]).strip()
+        classe_obj = None
+        if classe_str.isdigit():
+            classe_obj = Classe.query.filter_by(numero=int(classe_str), deleted_at=None).first()
+        if not classe_obj:
+            classe_obj = Classe.query.filter_by(nome=classe_str, deleted_at=None).first()
+        if classe_obj:
+            aluno.classe_id = classe_obj.id
+    db.session.add(aluno)
+    db.session.flush()
+    return aluno
+
+
+def _guardar_nota(aluno_id, dados):
+    """Guarda AC/PT/AP + exame (X) no model."""
+    db.session.add(Nota(
+        aluno_id=aluno_id,
+        disciplina=dados["disciplina"],
+        classe=dados.get("classe"),
+        turma=dados.get("turma"),
+        periodo=dados.get("periodo"),
+        nota_ac=dados.get("nota_ac"),
+        nota_pt=dados.get("nota_pt"),
+        nota_ap=dados.get("nota_ap"),
+        nota_exame=dados.get("nota_exame"),
+    ))
+
+
 def _processar_linha_pauta(dados, arquivo_nome):
-    """Classifica e regista uma linha do Excel. Devolve o resultado: 'importado',
-    'duplicado', 'nome', 'novo' ou 'ignorado' (dados incompletos)."""
-    if not dados["disciplina"]:
+    """
+    Lógica inteligente (responsabilidade do controle):
+    - 1ª vez da turma+período → importa tudo e cria alunos novos automaticamente.
+    - Se a turma+período JÁ tem notas → só cria pendência para novos / conflitos.
+    """
+    if not dados.get("disciplina"):
         return "ignorado"
 
-    aluno_exato, aluno_semelhante = _localizar_aluno(dados["matricula"], dados["nome"], dados["classe"])
+    primeira_vez = not _turma_ja_tem_notas(
+        dados.get("classe"), dados.get("turma"), dados.get("periodo")
+    )
 
+    aluno_exato, aluno_semelhante = _localizar_aluno(
+        dados.get("matricula"), dados.get("nome"), dados.get("classe")
+    )
+
+    # Aluno já existe
     if aluno_exato:
         nota_existente = Nota.query.filter_by(
             aluno_id=aluno_exato.id,
             disciplina=dados["disciplina"],
-            classe=dados["classe"],
-            turma=dados["turma"],
-            periodo=dados["periodo"],
+            classe=dados.get("classe"),
+            turma=dados.get("turma"),
+            periodo=dados.get("periodo"),
         ).first()
 
         if nota_existente:
             _registar_pendencia(
                 "duplicado", arquivo_nome, dados,
                 nome_banco=aluno_exato.nome,
-                descricao=(f"Já existe uma nota de {dados['disciplina']} para {aluno_exato.nome} "
-                            f"neste período. Confirme se pretende substituir a nota atual."),
+                descricao=(f"Já existe nota de {dados['disciplina']} para {aluno_exato.nome} "
+                           f"neste período. Confirme se pretende substituir."),
+                aluno_id=aluno_exato.id,
             )
             return "duplicado"
 
-        db.session.add(Nota(
-            aluno_id=aluno_exato.id,
-            disciplina=dados["disciplina"],
-            classe=dados["classe"],
-            turma=dados["turma"],
-            periodo=dados["periodo"],
-            nota_ac=dados["nota_ac"],
-            nota_pt=dados["nota_pt"],
-            nota_ap=dados["nota_ap"],
-        ))
+        _guardar_nota(aluno_exato.id, dados)
         return "importado"
 
+    # Nome parecido
     if aluno_semelhante:
+        if primeira_vez:
+            aluno = _criar_aluno_automatico(dados)
+            _guardar_nota(aluno.id, dados)
+            return "importado"
+
         _registar_pendencia(
             "nome", arquivo_nome, dados,
             nome_banco=aluno_semelhante.nome,
-            descricao=(f'O nome "{dados["nome"]}" não corresponde exatamente a nenhum aluno registado. '
-                        f'Encontrámos um nome parecido — confirme se é o mesmo aluno.'),
+            descricao=(f'O nome "{dados["nome"]}" não corresponde exatamente. '
+                       f'Encontrámos "{aluno_semelhante.nome}". Confirme se é o mesmo.'),
         )
         return "nome"
 
+    # Aluno totalmente novo
+    if primeira_vez:
+        aluno = _criar_aluno_automatico(dados)
+        _guardar_nota(aluno.id, dados)
+        return "importado"
+
     _registar_pendencia(
         "novo", arquivo_nome, dados,
-        descricao=f'O aluno "{dados["nome"]}" não foi encontrado na base de dados. Pode registá-lo como novo aluno.',
+        descricao=(f'O aluno "{dados["nome"]}" não existe e esta turma já tem notas '
+                   f'neste período. Confirme se pretende registá-lo.'),
     )
     return "novo"
 
@@ -773,10 +847,10 @@ def atualizar_estatisticas():
                 item.sufixo = sufixos[idx].strip()[:20]
 
         db.session.commit()
-        flash('Estat?sticas guardadas com sucesso!', 'estatisticas')
+        flash('Estatísticas guardadas com sucesso!', 'estatisticas')
     except Exception as e:
         db.session.rollback()
-        flash(f'Erro ao guardar estat?sticas: {str(e)}', 'estatisticas')
+        flash(f'Erro ao guardar estatísticas: {str(e)}', 'estatisticas')
 
     return redirect(url_for('controle.central_verificacao'))
 
@@ -863,7 +937,7 @@ def upload_pauta():
     for arquivo in ficheiros:
         nome_original = secure_filename(arquivo.filename)
         if not _extension_excel(nome_original):
-            mensagens_erro.append(f'"{arquivo.filename}": apenas ficheiros Excel (.xlsx ou .xls) s?o aceites.')
+            mensagens_erro.append(f'"{arquivo.filename}": apenas ficheiros Excel (.xlsx ou .xls) são aceites.')
             continue
 
         try:
@@ -883,9 +957,32 @@ def upload_pauta():
             db.session.add(pauta)
             db.session.commit()
             total_processados += 1
+
+            # Processamento inteligente só para notas
+            if tipo_pauta == "notas":
+                linhas, erro_leitura = _ler_linhas_excel(conteudo)
+                if erro_leitura:
+                    mensagens_erro.append(f'"{arquivo.filename}": {erro_leitura}')
+                else:
+                    contadores = {"importado": 0, "duplicado": 0, "nome": 0, "novo": 0, "ignorado": 0}
+                    for dados in linhas:
+                        resultado = _processar_linha_pauta(dados, nome_original)
+                        contadores[resultado] = contadores.get(resultado, 0) + 1
+                    try:
+                        db.session.commit()
+                        flash(
+                            f'"{arquivo.filename}": {contadores["importado"]} importado(s), '
+                            f'{contadores["duplicado"]} duplicado(s), '
+                            f'{contadores["nome"]} nome(s) a confirmar, '
+                            f'{contadores["novo"]} novo(s).',
+                            'pauta'
+                        )
+                    except Exception as e:
+                        db.session.rollback()
+                        mensagens_erro.append(f'"{arquivo.filename}": erro ao processar linhas — {str(e)}')
         except Exception as e:
             db.session.rollback()
-            mensagens_erro.append(f'"{arquivo.filename}": erro ao guardar ? {str(e)}')
+            mensagens_erro.append(f'"{arquivo.filename}": erro ao guardar — {str(e)}')
 
     for msg in mensagens_erro:
         flash(msg, 'pauta')
@@ -893,7 +990,7 @@ def upload_pauta():
     if total_processados:
         flash(f'{total_processados} ficheiro(s) Excel guardado(s) com sucesso.', 'pauta')
     elif not mensagens_erro:
-        flash('Nenhum ficheiro Excel v?lido foi enviado.', 'pauta')
+        flash('Nenhum ficheiro Excel válido foi enviado.', 'pauta')
 
     return redirect(url_for('controle.central_verificacao'))
 
@@ -1010,7 +1107,8 @@ def substituir_pauta():
                 periodo=nt.periodo,
                 nota_ac=nt.nota_ac,
                 nota_pt=nt.nota_pt,
-                nota_ap=nt.nota_ap
+                nota_ap=nt.nota_ap,
+                nota_exame=getattr(nt, "nota_exame", None),
             ))
 
         NotaTemporaria.query.filter_by(pendencia_id=pendencia.id).delete(synchronize_session=False)
@@ -1084,7 +1182,8 @@ def confirmar_aluno():
                 periodo=nt.periodo,
                 nota_ac=nt.nota_ac,
                 nota_pt=nt.nota_pt,
-                nota_ap=nt.nota_ap
+                nota_ap=nt.nota_ap,
+                nota_exame=getattr(nt, "nota_exame", None),
             )
             db.session.add(nova_nota)
 
@@ -1115,9 +1214,24 @@ def adicionar_aluno():
         return redirect(url_for('controle.central_verificacao'))
 
     try:
-        novo_aluno = Aluno(nome=pendencia.nome_excel)
+        codigo = _gerar_codigo_estudante_unico()
+        novo_aluno = Aluno(
+            nome=pendencia.nome_excel,
+            codigo_estudante=codigo,
+        )
         db.session.add(novo_aluno)
         db.session.flush()
+
+        # Tenta associar classe
+        if pendencia.classe:
+            classe_str = str(pendencia.classe).strip()
+            classe_obj = None
+            if classe_str.isdigit():
+                classe_obj = Classe.query.filter_by(numero=int(classe_str), deleted_at=None).first()
+            if not classe_obj:
+                classe_obj = Classe.query.filter_by(nome=classe_str, deleted_at=None).first()
+            if classe_obj:
+                novo_aluno.classe_id = classe_obj.id
 
         notas_temp = NotaTemporaria.query.filter_by(pendencia_id=pendencia.id).all()
         for nt in notas_temp:
@@ -1129,7 +1243,8 @@ def adicionar_aluno():
                 periodo=nt.periodo,
                 nota_ac=nt.nota_ac,
                 nota_pt=nt.nota_pt,
-                nota_ap=nt.nota_ap
+                nota_ap=nt.nota_ap,
+                nota_exame=getattr(nt, "nota_exame", None),
             )
             db.session.add(nova_nota)
 
@@ -1137,7 +1252,11 @@ def adicionar_aluno():
         pendencia.status = 'resolvido'
 
         db.session.commit()
-        flash(f'Aluno "{pendencia.nome_excel}" registado e notas importadas com sucesso!', 'pendencia-sucesso')
+        flash(
+            f'Aluno "{pendencia.nome_excel}" registado com sucesso! '
+            f'ID: {codigo} | Senha: ESGAM000 | Notas importadas.',
+            'pendencia-sucesso'
+        )
 
     except Exception as e:
         db.session.rollback()
@@ -1151,46 +1270,105 @@ def adicionar_aluno():
 # ==========================================
 
 def carregar_portal(student_id):
-    """Carrega todos os dados necessários para o portal do estudante."""
+    """Monta a vista do portal. Cálculos básicos vêm do model (media_parcial / media_com_exame)."""
     try:
-        aluno = Aluno.query.filter_by(id=student_id).first()
+        aluno = Aluno.query.filter_by(id=student_id, deleted_at=None).first()
 
         if not aluno:
             return {
-                "aluno": {"classe": "0"},
+                "aluno": {
+                    "id": student_id, "nome": "—", "classe": "0",
+                    "turma": "—", "grupo": "—", "codigo": None,
+                    "media_geral": "—", "situacao": None,
+                },
                 "pauta_disciplinas": [],
                 "aviso_painel": "Estudante não encontrado no sistema escolar."
             }
 
-        # Carrega todas as notas associadas ao aluno
-        pauta_disciplinas = Nota.query.filter_by(
-            aluno_id=student_id
-        ).all()
+        aluno_view = {
+            "id": aluno.id,
+            "nome": aluno.nome,
+            "classe": (aluno.classe_rel.numero if aluno.classe_rel else (aluno.classe_nome or "0")),
+            "turma": aluno.turma_nome or "—",
+            "grupo": aluno.grupo_nome or "—",
+            "codigo": aluno.codigo_estudante or str(aluno.id),
+            "media_geral": "—",
+            "situacao": None,
+        }
 
-        # Tenta carregar o aviso ativo (tratamento defensivo caso o modelo varie)
+        notas = Nota.query.filter_by(aluno_id=student_id).all()
+
+        from collections import defaultdict
+        por_disciplina = defaultdict(lambda: {
+            "nome": "",
+            "t1_p1": None, "t1_p2": None, "t1_p3": None, "t1_p4": None, "mf1": None,
+            "t2_p1": None, "t2_p2": None, "t2_p3": None, "t2_p4": None, "mf2": None,
+            "t3_p1": None, "t3_p2": None, "t3_p3": None, "t3_p4": None, "mf3": None,
+            "exame": None, "nota_global": None,
+        })
+
+        for n in notas:
+            d = por_disciplina[n.disciplina]
+            d["nome"] = n.disciplina
+            periodo = (n.periodo or "").lower()
+            mf = n.media_parcial  # propriedade do model
+
+            if "1" in periodo or "primeiro" in periodo or "1º" in periodo:
+                d["t1_p1"], d["t1_p2"], d["t1_p3"], d["mf1"] = n.nota_ac, n.nota_pt, n.nota_ap, mf
+            elif "2" in periodo or "segundo" in periodo or "2º" in periodo:
+                d["t2_p1"], d["t2_p2"], d["t2_p3"], d["mf2"] = n.nota_ac, n.nota_pt, n.nota_ap, mf
+            elif "3" in periodo or "terceiro" in periodo or "3º" in periodo:
+                d["t3_p1"], d["t3_p2"], d["t3_p3"], d["mf3"] = n.nota_ac, n.nota_pt, n.nota_ap, mf
+            else:
+                d["t1_p1"], d["t1_p2"], d["t1_p3"], d["mf1"] = n.nota_ac, n.nota_pt, n.nota_ap, mf
+
+            if n.nota_exame is not None:
+                d["exame"] = n.nota_exame
+
+            mfs = [v for v in (d["mf1"], d["mf2"], d["mf3"]) if v is not None]
+            if d["exame"] is not None and mfs:
+                d["nota_global"] = round((sum(mfs) / len(mfs) + d["exame"]) / 2, 1)
+            elif mfs:
+                d["nota_global"] = round(sum(mfs) / len(mfs), 1)
+
+        pauta_disciplinas = list(por_disciplina.values())
+
+        todas = [d["nota_global"] for d in pauta_disciplinas if d.get("nota_global") is not None]
+        if not todas:
+            todas = []
+            for d in pauta_disciplinas:
+                for k in ("mf1", "mf2", "mf3"):
+                    if d.get(k) is not None:
+                        todas.append(d[k])
+        if todas:
+            aluno_view["media_geral"] = round(sum(todas) / len(todas), 1)
+            aluno_view["situacao"] = "Aprovado" if aluno_view["media_geral"] >= 10 else "Reprovado"
+
         aviso_mensagem = None
         try:
             aviso = Aviso.query.filter_by(ativo=True).first()
             if aviso:
-                aviso_mensagem = getattr(aviso, 'mensagem', None) or getattr(aviso, 'texto', None)
+                aviso_mensagem = getattr(aviso, "mensagem", None) or getattr(aviso, "texto", None)
         except Exception:
-            logging.warning("Modelo Aviso não encontrado ou erro na consulta de aviso ativo.")
             db.session.rollback()
 
         return {
-            "aluno": aluno,
+            "aluno": aluno_view,
             "pauta_disciplinas": pauta_disciplinas,
-            "aviso_painel": aviso_mensagem
+            "aviso_painel": aviso_mensagem,
         }
 
-    except Exception as e:
+    except Exception:
         logging.exception("Erro ao carregar o portal do estudante.")
         db.session.rollback()
-
         return {
-            "aluno": {"classe": "0"},
+            "aluno": {
+                "id": student_id, "nome": "—", "classe": "0",
+                "turma": "—", "grupo": "—", "codigo": None,
+                "media_geral": "—", "situacao": None,
+            },
             "pauta_disciplinas": [],
-            "aviso_painel": "Erro ao carregar os dados."
+            "aviso_painel": "Erro ao carregar os dados.",
         }
 
 

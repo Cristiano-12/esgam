@@ -391,13 +391,30 @@ class Nota(db.Model):
     classe = db.Column(db.String(50), nullable=True)
     turma = db.Column(db.String(50), nullable=True)
     periodo = db.Column(db.String(50), nullable=True)
-    
+
     nota_ac = db.Column(db.Float, nullable=True)
     nota_pt = db.Column(db.Float, nullable=True)
     nota_ap = db.Column(db.Float, nullable=True)
+    nota_exame = db.Column(db.Float, nullable=True)  # nota X / exame
 
     def __repr__(self):
         return f"<Nota aluno_id={self.aluno_id} disciplina={self.disciplina}>"
+
+    @property
+    def media_parcial(self):
+        """Média de AC + PT + AP (ignora None)."""
+        vals = [v for v in (self.nota_ac, self.nota_pt, self.nota_ap) if v is not None]
+        return round(sum(vals) / len(vals), 1) if vals else None
+
+    @property
+    def media_com_exame(self):
+        """Média parcial + exame (quando existir)."""
+        base = self.media_parcial
+        if base is None:
+            return self.nota_exame
+        if self.nota_exame is None:
+            return base
+        return round((base + self.nota_exame) / 2, 1)
 
 
 class NotaTemporaria(db.Model):
@@ -410,10 +427,11 @@ class NotaTemporaria(db.Model):
     classe = db.Column(db.String(50), nullable=True)
     turma = db.Column(db.String(50), nullable=True)
     periodo = db.Column(db.String(50), nullable=True)
-    
+
     nota_ac = db.Column(db.Float, nullable=True)
     nota_pt = db.Column(db.Float, nullable=True)
     nota_ap = db.Column(db.Float, nullable=True)
+    nota_exame = db.Column(db.Float, nullable=True)
 
     def __repr__(self):
         return f"<NotaTemporaria pendencia_id={self.pendencia_id}>"
