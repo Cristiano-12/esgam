@@ -415,7 +415,7 @@ def _normalizar(texto):
 
 
 def _mapear_colunas(linha_cabecalho):
-    """Associa cada coluna do Excel (pela 1ª linha) ao campo interno correspondente."""
+    """Associa cada coluna do Excel (por uma linha de cabeçalho) ao campo interno correspondente."""
     mapa = {}
     for indice, celula in enumerate(linha_cabecalho or []):
         chave_normalizada = _normalizar(celula)
@@ -426,12 +426,78 @@ def _mapear_colunas(linha_cabecalho):
     return mapa
 
 
+def _localizar_linha_cabecalho(linhas_brutas, limite=15):
+    """Procura, nas primeiras linhas do ficheiro, a linha que contém a coluna 'Nome'."""
+    for indice, linha in enumerate(linhas_brutas[:limite]):
+        for celula in (linha or []):
+            if _normalizar(celula) in CABECALHOS_ESPERADOS["nome"]:
+                return indice
+    return None
+
+
+def _extrair_classe_turma_do_titulo(linhas_brutas, limite=10):
+    """Procura, nas primeiras linhas, um título tipo 'PAUTA...11ª Classe GRUPO: A TURMA: B'."""
+    for linha in linhas_brutas[:limite]:
+        texto = " ".join(str(c) for c in (linha or []) if c is not None)
+        if not texto:
+            continue
+        if "grupo" not in _normalizar(texto) and "turma" not in _normalizar(texto):
+            continue
+
+        classe = None
+        turma = None
+
+        m_classe = re.search(r"(\d+)\s*ª?\s*classe", texto, re.IGNORECASE)
+        if m_classe:
+            classe = m_classe.group(1)
+
+        m_turma = re.search(r"turma[:\s]+([A-Za-z0-9]+)", texto, re.IGNORECASE)
+        if m_turma:
+            turma = m_turma.group(1)
+
+        if classe or turma:
+            return classe, turma
+
+    return None, None
+
+
+def _mapear_disciplinas_formato_largo(linha_cabecalho, coluna_nome):
+    """
+    Formato oficial de pauta: várias disciplinas lado a lado na mesma linha de
+    cabeçalho, cada uma ocupando várias colunas (normalmente 3 trimestres + média).
+    Devolve uma lista de (nome_disciplina, coluna_inicial, largura), ignorando a
+    última coluna se for "Resultado" (não é uma disciplina).
+    """
+    posicoes = []
+    for indice, celula in enumerate(linha_cabecalho or []):
+        if indice <= coluna_nome or celula is None:
+            continue
+        texto = str(celula).strip()
+        if not texto:
+            continue
+        if _normalizar(texto) in ("resultado", "genero", "género", "sexo"):
+            continue
+        posicoes.append((texto, indice))
+
+    disciplinas = []
+    for i, (nome_disciplina, col_inicio) in enumerate(posicoes):
+        col_fim = posicoes[i + 1][1] if i + 1 < len(posicoes) else col_inicio + 4
+        disciplinas.append((nome_disciplina, col_inicio, col_fim - col_inicio))
+
+    return disciplinas
+
+
 def _ler_linhas_excel(conteudo_bytes):
     """Lê o ficheiro Excel (em memória) e devolve (linhas, erro).
 
-    Cada linha é um dicionário com as chaves de CABECALHOS_ESPERADOS.
-    Espera uma 1ª linha de cabeçalho com nomes como:
-    Matrícula | Nome | Classe | Turma | Período | Disciplina | AC | PT | AP
+    Reconhece dois formatos:
+    1. Simples — 1ª linha com cabeçalhos: Matrícula | Nome | Classe | Turma |
+       Período | Disciplina | AC | PT | AP (uma disciplina por linha).
+    2. Pauta oficial — cabeçalho pode estar em qualquer linha inicial, com várias
+       disciplinas lado a lado (cada uma com 1º/2º/3º trimestre + média). Classe e
+       turma são detetados a partir do título da pauta (ex: "...11ª Classe GRUPO:
+       A TURMA: B..."). Os 3 trimestres de cada disciplina são guardados em
+       nota_ac, nota_pt e nota_ap.
     """
     if load_workbook is None:
         return None, "A biblioteca 'openpyxl' não está instalada no servidor — contacte o suporte técnico."
@@ -447,16 +513,13 @@ def _ler_linhas_excel(conteudo_bytes):
     if not linhas_brutas:
         return None, "O ficheiro Excel está vazio."
 
-    mapa = _mapear_colunas(linhas_brutas[0])
-    if "nome" not in mapa:
-        return None, ("Não foi possível identificar a coluna 'Nome' no cabeçalho. "
-                       "Confirme que a 1ª linha do Excel contém os títulos das colunas.")
+    indice_cabecalho = _localizar_linha_cabecalho(linhas_brutas)
+    if indice_cabecalho is None:
+        return None, ("Não foi possível encontrar uma coluna 'Nome' em nenhuma das primeiras "
+                       "linhas do ficheiro. Confirme que o Excel tem essa coluna.")
 
-    def valor(linha, campo):
-        indice = mapa.get(campo)
-        if indice is None or indice >= len(linha):
-            return None
-        return linha[indice]
+    linha_cabecalho = linhas_brutas[indice_cabecalho]
+    mapa = _mapear_colunas(linha_cabecalho)
 
     def para_float(v):
         try:
@@ -465,28 +528,75 @@ def _ler_linhas_excel(conteudo_bytes):
             return None
 
     linhas = []
-    for linha in linhas_brutas[1:]:
-        nome = valor(linha, "nome")
-        if nome is None or str(nome).strip() == "":
-            continue  # ignora linhas em branco
 
-        linhas.append({
-            "matricula": (str(valor(linha, "matricula")).strip() if valor(linha, "matricula") not in (None, "") else None),
-            "nome": str(nome).strip(),
-            "classe": str(valor(linha, "classe") or "").strip(),
-            "turma": str(valor(linha, "turma") or "").strip(),
-            "periodo": str(valor(linha, "periodo") or "").strip(),
-            "disciplina": str(valor(linha, "disciplina") or "").strip(),
-            "nota_ac": para_float(valor(linha, "nota_ac")),
-            "nota_pt": para_float(valor(linha, "nota_pt")),
-            "nota_ap": para_float(valor(linha, "nota_ap")),
-            "nota_exame": para_float(valor(linha, "nota_exame")),
-        })
+    if "disciplina" in mapa:
+        # ---- Formato simples: uma disciplina por linha ----
+        def valor(linha, campo):
+            indice = mapa.get(campo)
+            if indice is None or indice >= len(linha):
+                return None
+            return linha[indice]
+
+        for linha in linhas_brutas[indice_cabecalho + 1:]:
+            nome = valor(linha, "nome")
+            if nome is None or str(nome).strip() == "":
+                continue
+
+            linhas.append({
+                "matricula": (str(valor(linha, "matricula")).strip() if valor(linha, "matricula") not in (None, "") else None),
+                "nome": str(nome).strip(),
+                "classe": str(valor(linha, "classe") or "").strip(),
+                "turma": str(valor(linha, "turma") or "").strip(),
+                "periodo": str(valor(linha, "periodo") or "").strip(),
+                "disciplina": str(valor(linha, "disciplina") or "").strip(),
+                "nota_ac": para_float(valor(linha, "nota_ac")),
+                "nota_pt": para_float(valor(linha, "nota_pt")),
+                "nota_ap": para_float(valor(linha, "nota_ap")),
+                "nota_exame": para_float(valor(linha, "nota_exame")),
+            })
+    else:
+        # ---- Formato oficial de pauta: disciplinas lado a lado ----
+        coluna_nome = mapa["nome"]
+        disciplinas = _mapear_disciplinas_formato_largo(linha_cabecalho, coluna_nome)
+        if not disciplinas:
+            return None, ("Encontrei a coluna 'Nome', mas não consegui identificar nenhuma "
+                           "disciplina no cabeçalho. Confirme o formato do ficheiro.")
+
+        classe_detetada, turma_detetada = _extrair_classe_turma_do_titulo(linhas_brutas[:indice_cabecalho])
+
+        for linha in linhas_brutas[indice_cabecalho + 1:]:
+            nome = linha[coluna_nome] if coluna_nome < len(linha) else None
+            if nome is None or str(nome).strip() == "":
+                continue  # ignora linhas de subcabeçalho e espaços em branco preparados
+
+            nome = str(nome).strip()
+
+            for nome_disciplina, col_inicio, largura in disciplinas:
+                valores = [
+                    linha[col_inicio + i] if (col_inicio + i) < len(linha) else None
+                    for i in range(min(largura, 3))  # só os 3 trimestres, ignora a média
+                ]
+                if all(v in (None, "") for v in valores):
+                    continue  # disciplina sem nenhuma nota lançada para este aluno
+
+                linhas.append({
+                    "matricula": None,
+                    "nome": nome,
+                    "classe": classe_detetada or "",
+                    "turma": turma_detetada or "",
+                    "periodo": "",
+                    "disciplina": str(nome_disciplina).strip(),
+                    "nota_ac": para_float(valores[0] if len(valores) > 0 else None),
+                    "nota_pt": para_float(valores[1] if len(valores) > 1 else None),
+                    "nota_ap": para_float(valores[2] if len(valores) > 2 else None),
+                    "nota_exame": None,
+                })
 
     if not linhas:
-        return None, "Nenhuma linha com nome de aluno foi encontrada no ficheiro."
+        return None, "Nenhuma linha com nome de aluno e notas foi encontrada no ficheiro."
 
     return linhas, None
+
 
 
 def _localizar_aluno(matricula, nome, classe):
