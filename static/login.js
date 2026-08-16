@@ -98,3 +98,66 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 });
+
+
+(function () {
+    
+    document.querySelectorAll('form').forEach(function (form) {
+        form.addEventListener('submit', function () {
+            try {
+                sessionStorage.setItem('controleScrollY', String(window.scrollY || 0));
+                var card = form.closest('.card');
+                if (card) {
+                    var h = card.querySelector('h2');
+                    if (h) sessionStorage.setItem('controleScrollTarget', h.textContent.trim());
+                }
+            } catch (e) {}
+        });
+    });
+
+    function restaurarScroll() {
+        try {
+            var target = sessionStorage.getItem('controleScrollTarget');
+            var y = sessionStorage.getItem('controleScrollY');
+            sessionStorage.removeItem('controleScrollTarget');
+            sessionStorage.removeItem('controleScrollY');
+            if (target) {
+                var headings = document.querySelectorAll('.card h2');
+                for (var i = 0; i < headings.length; i++) {
+                    if (headings[i].textContent.trim() === target) {
+                        headings[i].scrollIntoView({ block: 'center', behavior: 'auto' });
+                        return;
+                    }
+                }
+            }
+            if (y !== null) window.scrollTo(0, parseInt(y, 10) || 0);
+        } catch (e) {}
+    }
+
+    function fecharFlash(el) {
+        if (!el || !el.parentNode) return;
+        el.style.transition = 'opacity .3s ease';
+        el.style.opacity = '0';
+        setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 300);
+    }
+
+    document.querySelectorAll('.flash-close').forEach(function (btn) {
+        if (btn.closest('form')) return; // botão X de pendência (submit)
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            fecharFlash(btn.closest('.flash'));
+        });
+    });
+
+    // Auto-esconder flashes de mensagem (não as caixas de pendência)
+    document.querySelectorAll('.flash').forEach(function (flash) {
+        if (flash.closest('[style*="padding:22px"]')) return;
+        setTimeout(function () { fecharFlash(flash); }, 6000);
+    });
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', restaurarScroll);
+    } else {
+        restaurarScroll();
+    }
+})();

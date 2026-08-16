@@ -25,12 +25,6 @@
             <p>Gestão da direção</p>
         </div>
 
-        <div class="header-menu">
-            <button type="button" id="menu-btn" aria-label="Abrir menu">Menu</button>
-            <div id="dropdown-menu" class="dropdown-menu">
-                <button type="button" id="logout-btn">Sair</button>
-            </div>
-        </div>
     </header>
     <main class="dashboard">
 
@@ -300,7 +294,6 @@
                 </section>
 
                 <section class="card">
-
                     <h2>Mensagem da Direção</h2>
 
                     {% with messages = get_flashed_messages(category_filter=["diretor"]) %}
@@ -308,46 +301,34 @@
                     {% for mensagem in messages %}
                     <div class="flash success">
                         <span>{{ mensagem }}</span>
-                        <button class="flash-close">&times;</button>
+                        <button type="button" class="flash-close">&times;</button>
                     </div>
                     {% endfor %}
                     {% endif %}
                     {% endwith %}
 
                     <form action="/admin/diretor" method="POST" enctype="multipart/form-data">
-
                         <div class="form-group">
-
                             <label>Título</label>
-
-                            <input type="text" name="titulo" value="{{ diretor.titulo }}" maxlength="19">
-
+                            <input type="text" value="Mensagem da Direção" disabled>
+                            <input type="hidden" name="titulo" value="Mensagem da Direção">
                         </div>
 
                         <div class="form-group">
-
                             <label>Mensagem</label>
-
-                            <textarea rows="8" name="texto" maxlength="220">{{ diretor.texto }}</textarea>
-
+                            <textarea rows="8" name="texto" maxlength="500">{{ diretor.texto }}</textarea>
                         </div>
 
                         <div class="form-group">
-
-                            <label>Fotografia</label>
-
-                            <input type="file" name="foto" accept="image/*"><small class="file-indicator">Nenhum ficheiro selecionado</small>
-
+                            <label>Fotografia (opcional)</label>
+                            <input type="file" name="foto" accept="image/*">
+                            <small class="file-indicator">Nenhum ficheiro selecionado</small>
                         </div>
 
-                        <button class="btn-primary">
-
+                        <button type="submit" class="btn-primary">
                             Atualizar Mensagem
-
                         </button>
-
                     </form>
-
                 </section>
 
                 <section class="card">
@@ -870,9 +851,16 @@
 
                 <div style="margin-top:20px;padding:22px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;">
 
-                    <h3 style="margin-bottom:10px;">
-                        {{ erro.nome_excel or erro.arquivo or 'Pendência #' ~ erro.id }}
-                    </h3>
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;">
+                        <h3 style="margin:0;">
+                            {{ erro.nome_excel or erro.arquivo or 'Pendência #' ~ erro.id }}
+                        </h3>
+                        <form action="/admin/ignorar-pauta" method="POST" style="margin:0;"
+                              onsubmit="return confirm('Descartar esta pendência?');">
+                            <input type="hidden" name="id" value="{{ erro.id }}">
+                            <button type="submit" class="flash-close" title="Descartar pendência" aria-label="Descartar">&times;</button>
+                        </form>
+                    </div>
 
                     <p style="margin-bottom:18px;color:#64748b;">
 
@@ -1042,14 +1030,9 @@
 
                 {% else %}
 
-                <div class="flash success">
-
-                    <span>
-
-                        Todas as pautas foram validadas, importadas e verificadas com sucesso. Não existem pendências.
-
-                    </span>
-
+                <div class="flash success" data-dismissible="pendencias-ok">
+                    <span>Não existem pendências no momento.</span>
+                    <button type="button" class="flash-close" aria-label="Fechar">&times;</button>
                 </div>
 
                 {% endif %}
@@ -1067,5 +1050,6 @@
     </main>
 
     <script src="{{ url_for('static', filename='login.js') }}"></script>
+
 </body>
 </html>

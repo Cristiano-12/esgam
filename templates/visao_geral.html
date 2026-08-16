@@ -119,7 +119,11 @@
                             {% else %}
                             <tr>
                                 <td colspan="7" class="empty-cell">
-                                    Nenhum estudante registado com este filtro.
+                                    {% if tem_filtro %}
+                                    Nenhum estudante com este filtro.
+                                    {% else %}
+                                    Escolha classe, grupo, turma ou pesquise um aluno para ver a lista.
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}

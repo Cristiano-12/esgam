@@ -638,6 +638,47 @@ def _gerar_codigo_estudante_unico():
 
 
 def _registar_pendencia(tipo, arquivo_nome, dados, nome_banco=None, descricao="", aluno_id=None):
+    """Cria pendência só se ainda não existir uma igual (evita spam de duplicados)."""
+    q = PendenciaPauta.query.filter_by(
+        status='pendente',
+        tipo=tipo,
+        nome_excel=dados.get("nome"),
+        classe=dados.get("classe"),
+        turma=dados.get("turma"),
+        periodo=dados.get("periodo"),
+    )
+    existente = q.first()
+    if existente:
+        # Atualiza descrição/arquivo se já houver pendência igual
+        existente.arquivo = arquivo_nome or existente.arquivo
+        existente.descricao = descricao or existente.descricao
+        existente.nome_banco = nome_banco or existente.nome_banco
+        # Atualiza notas temporárias da mesma disciplina, se existirem
+        nt = NotaTemporaria.query.filter_by(
+            pendencia_id=existente.id,
+            disciplina=dados.get("disciplina"),
+        ).first()
+        if nt:
+            nt.nota_ac = dados.get("nota_ac")
+            nt.nota_pt = dados.get("nota_pt")
+            nt.nota_ap = dados.get("nota_ap")
+            nt.nota_exame = dados.get("nota_exame")
+            nt.aluno_id = aluno_id if aluno_id is not None else nt.aluno_id
+        else:
+            db.session.add(NotaTemporaria(
+                pendencia_id=existente.id,
+                aluno_id=aluno_id,
+                disciplina=dados.get("disciplina"),
+                classe=dados.get("classe"),
+                turma=dados.get("turma"),
+                periodo=dados.get("periodo"),
+                nota_ac=dados.get("nota_ac"),
+                nota_pt=dados.get("nota_pt"),
+                nota_ap=dados.get("nota_ap"),
+                nota_exame=dados.get("nota_exame"),
+            ))
+        return existente
+
     pendencia = PendenciaPauta(
         arquivo=arquivo_nome,
         classe=dados.get("classe"),
@@ -841,26 +882,28 @@ def atualizar_sobre():
 @controle_bp.route('/admin/diretor', methods=['POST'])
 @login_required
 def atualizar_diretor():
-    titulo = request.form.get('titulo', '').strip()
-    texto = request.form.get('texto', '').strip()
-    titulo = titulo[:15]
-    texto = texto[:260]
+    titulo = "Mensagem da Direção"
+    texto = request.form.get('texto', '').strip()[:500]
 
     diretor = Diretor.query.first()
     if not diretor:
-        diretor = Diretor(titulo=titulo, texto=texto)
+        diretor = Diretor(titulo=titulo, texto=texto or "")
         db.session.add(diretor)
+    else:
+        diretor.titulo = titulo
+        diretor.texto = texto
 
-    diretor.titulo = titulo
-    diretor.texto = texto
-
-    nome_foto = _guardar_ficheiro('foto')
-    if nome_foto:
-        diretor.foto = nome_foto
+    try:
+        nome_foto = _guardar_ficheiro('foto')
+        if nome_foto:
+            diretor.foto = nome_foto
+    except Exception:
+        logging.exception("Falha ao enviar fotografia do diretor")
+        flash('A mensagem foi guardada, mas a fotografia não pôde ser enviada.', 'diretor')
 
     try:
         db.session.commit()
-        flash('Mensagem do diretor atualizada com sucesso!', 'diretor')
+        flash('Mensagem da Direção atualizada com sucesso!', 'diretor')
     except Exception as e:
         db.session.rollback()
         flash(f'Erro ao atualizar mensagem: {str(e)}', 'diretor')

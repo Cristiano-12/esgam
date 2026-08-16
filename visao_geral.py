@@ -44,29 +44,45 @@ def central_verificacao():
     estado_consulta_publica = "Aberto" if portal_pauta_aberto else "Fechado"
     estado_portal_estudante = "Aberto" if portal_notas_aberto else "Fechado"
 
-    # --- Filtros da listagem ---
+    # --- Filtros da listagem (só carrega alunos se filtrar/pesquisar) ---
     classe_filtro = request.args.get('classe_filtro', '').strip()
     grupo_filtro = request.args.get('grupo_filtro', '').strip()
     turma_filtro = request.args.get('turma', '').strip()
+    pesquisa_id = request.args.get('pesquisa_id', '').strip()
+    tem_filtro = bool(classe_filtro or grupo_filtro or turma_filtro or pesquisa_id)
+    alunos = []
 
-    query_alunos = Aluno.query.filter_by(deleted_at=None)
+    if tem_filtro:
+        query_alunos = Aluno.query.filter_by(deleted_at=None)
 
-    if classe_filtro:
-        # Aceita "10", "10ª Classe", etc.
-        if classe_filtro.isdigit():
-            query_alunos = query_alunos.join(Classe).filter(
-                (Classe.numero == int(classe_filtro)) | (Classe.nome == classe_filtro)
-            )
-        else:
-            query_alunos = query_alunos.join(Classe).filter(Classe.nome == classe_filtro)
+        if classe_filtro:
+            if classe_filtro.isdigit():
+                query_alunos = query_alunos.outerjoin(Classe).filter(
+                    (Classe.numero == int(classe_filtro)) | (Classe.nome == classe_filtro)
+                )
+            else:
+                query_alunos = query_alunos.outerjoin(Classe).filter(Classe.nome == classe_filtro)
 
-    if grupo_filtro:
-        query_alunos = query_alunos.join(Grupo).filter(Grupo.nome == grupo_filtro)
+        if grupo_filtro:
+            query_alunos = query_alunos.outerjoin(Grupo).filter(Grupo.nome == grupo_filtro)
 
-    if turma_filtro:
-        query_alunos = query_alunos.join(Turma).filter(Turma.nome == turma_filtro)
+        if turma_filtro:
+            query_alunos = query_alunos.outerjoin(Turma).filter(Turma.nome == turma_filtro)
 
-    alunos = query_alunos.order_by(Aluno.nome.asc()).limit(100).all()
+        if pesquisa_id:
+            if pesquisa_id.isdigit():
+                query_alunos = query_alunos.filter(
+                    (Aluno.id == int(pesquisa_id))
+                    | (Aluno.codigo_estudante.ilike(f"%{pesquisa_id}%"))
+                    | (Aluno.nome.ilike(f"%{pesquisa_id}%"))
+                )
+            else:
+                query_alunos = query_alunos.filter(
+                    (Aluno.codigo_estudante.ilike(f"%{pesquisa_id}%"))
+                    | (Aluno.nome.ilike(f"%{pesquisa_id}%"))
+                )
+
+        alunos = query_alunos.order_by(Aluno.nome.asc()).limit(100).all()
 
     # --- Pesquisa por ID interno ou código ESG-... ---
     pesquisa_id = request.args.get('pesquisa_id', '').strip()
@@ -118,6 +134,11 @@ def central_verificacao():
         senha_portal=SENHA_PORTAL_ALUNO,
         avisos_gerais=[b.mensagem for b in avisos_gerais],
         avisos_individuais=[b.mensagem for b in avisos_individuais],
+        tem_filtro=tem_filtro,
+        classe_filtro=classe_filtro,
+        grupo_filtro=grupo_filtro,
+        turma_filtro=turma_filtro,
+        pesquisa_id=pesquisa_id,
     )
 
 
