@@ -1,15 +1,13 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from functools import wraps
-from models import db, Aluno, Classe, Turma, Grupo, Banner, ConfiguracaoSistema
+from models import db, Aluno, Classe, Turma, Grupo, Banner, ConfiguracaoSistema, Nota
 
 visao_bp = Blueprint('visao_geral', __name__)
 
-# Senha fixa de acesso ao portal do aluno (igual para todos)
 SENHA_PORTAL_ALUNO = "ESGAM000"
 
 
 def login_required(f):
-    """Decorator para restrição de acesso a administradores autenticados."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'admin_logged_in' not in session:
@@ -22,29 +20,12 @@ def login_required(f):
 @visao_bp.route('/admin/central', methods=['GET'])
 @login_required
 def central_verificacao():
-    """
-    Visão geral: métricas, filtros e pesquisa de alunos por ID interno
-    ou código de estudante (ESG-XXXXXX).
-    """
     total_aluno = Aluno.query.filter_by(deleted_at=None).count()
     total_classes = Classe.query.filter_by(deleted_at=None).count()
     total_turmas = Turma.query.filter_by(deleted_at=None).count()
     total_grupos = Grupo.query.filter_by(deleted_at=None).count()
     total_avisos = Banner.query.count()
 
-    config = ConfiguracaoSistema.query.first()
-    if not config:
-        config = ConfiguracaoSistema()
-        db.session.add(config)
-        db.session.commit()
-
-    portal_notas_aberto = config.portal_aberto
-    portal_pauta_aberto = config.modo_pauta_aberto
-
-    estado_consulta_publica = "Aberto" if portal_pauta_aberto else "Fechado"
-    estado_portal_estudante = "Aberto" if portal_notas_aberto else "Fechado"
-
-    # --- Filtros da listagem (só carrega alunos se filtrar/pesquisar) ---
     classe_filtro = request.args.get('classe_filtro', '').strip()
     grupo_filtro = request.args.get('grupo_filtro', '').strip()
     turma_filtro = request.args.get('turma', '').strip()
@@ -53,66 +34,81 @@ def central_verificacao():
     alunos = []
 
     if tem_filtro:
-        query_alunos = Aluno.query.filter_by(deleted_at=None)
+        query_alunos = Aluno.query.filter(Aluno.deleted_at.is_(None))
 
         if classe_filtro:
+            # 1) alunos com classe_id ligado
+            # 2) alunos cuja nota tem texto de classe (import Excel)
+            ids_por_nota = (
+                db.session.query(Nota.aluno_id)
+                .filter(Nota.classe.isnot(None), Nota.classe.ilike(f"%{classe_filtro}%"))
+                .distinct()
+            )
+            query_alunos = query_alunos.outerjoin(Classe, Aluno.classe_id == Classe.id)
             if classe_filtro.isdigit():
-                query_alunos = query_alunos.outerjoin(Classe).filter(
-                    (Classe.numero == int(classe_filtro)) | (Classe.nome == classe_filtro)
+                n = int(classe_filtro)
+                query_alunos = query_alunos.filter(
+                    (Classe.numero == n)
+                    | (Classe.nome.ilike(f"%{classe_filtro}%"))
+                    | (Aluno.id.in_(ids_por_nota))
                 )
             else:
-                query_alunos = query_alunos.outerjoin(Classe).filter(Classe.nome == classe_filtro)
+                query_alunos = query_alunos.filter(
+                    (Classe.nome.ilike(f"%{classe_filtro}%"))
+                    | (Aluno.id.in_(ids_por_nota))
+                )
 
         if grupo_filtro:
-            query_alunos = query_alunos.outerjoin(Grupo).filter(Grupo.nome == grupo_filtro)
+            query_alunos = query_alunos.outerjoin(
+                Grupo, Aluno.grupo_id == Grupo.id
+            ).filter(Grupo.nome.ilike(grupo_filtro.strip()))
 
         if turma_filtro:
-            query_alunos = query_alunos.outerjoin(Turma).filter(Turma.nome == turma_filtro)
+            ids_turma = (
+                db.session.query(Nota.aluno_id)
+                .filter(Nota.turma.isnot(None), Nota.turma.ilike(f"%{turma_filtro}%"))
+                .distinct()
+            )
+            query_alunos = query_alunos.outerjoin(
+                Turma, Aluno.turma_id == Turma.id
+            ).filter(
+                (Turma.nome.ilike(f"%{turma_filtro}%"))
+                | (Aluno.id.in_(ids_turma))
+            )
 
         if pesquisa_id:
             if pesquisa_id.isdigit():
                 query_alunos = query_alunos.filter(
                     (Aluno.id == int(pesquisa_id))
                     | (Aluno.codigo_estudante.ilike(f"%{pesquisa_id}%"))
-                    | (Aluno.nome.ilike(f"%{pesquisa_id}%"))
                 )
             else:
                 query_alunos = query_alunos.filter(
-                    (Aluno.codigo_estudante.ilike(f"%{pesquisa_id}%"))
-                    | (Aluno.nome.ilike(f"%{pesquisa_id}%"))
+                    Aluno.codigo_estudante.ilike(f"%{pesquisa_id}%")
                 )
 
-        alunos = query_alunos.order_by(Aluno.nome.asc()).limit(100).all()
+        alunos = (
+            query_alunos.distinct()
+            .order_by(Aluno.nome.asc())
+            .limit(200)
+            .all()
+        )
 
-    # --- Pesquisa por ID interno ou código ESG-... ---
-    pesquisa_id = request.args.get('pesquisa_id', '').strip()
+    # Pesquisa individual: só código ESG ou ID numérico
     aluno_pesquisado = None
-
     if pesquisa_id:
-        # 1) ID numérico interno
         if pesquisa_id.isdigit():
             aluno_pesquisado = Aluno.query.filter_by(
                 id=int(pesquisa_id), deleted_at=None
             ).first()
-
-        # 2) Código de estudante (ex: ESG-A3F9K2)
         if not aluno_pesquisado:
             aluno_pesquisado = Aluno.query.filter_by(
                 codigo_estudante=pesquisa_id, deleted_at=None
             ).first()
-
-        # 3) Busca parcial no código (sem diferenciar maiúsculas)
         if not aluno_pesquisado:
             aluno_pesquisado = Aluno.query.filter(
                 Aluno.deleted_at.is_(None),
                 Aluno.codigo_estudante.ilike(f"%{pesquisa_id}%"),
-            ).first()
-
-        # 4) Busca parcial no nome
-        if not aluno_pesquisado:
-            aluno_pesquisado = Aluno.query.filter(
-                Aluno.deleted_at.is_(None),
-                Aluno.nome.ilike(f"%{pesquisa_id}%"),
             ).first()
 
     avisos_gerais = Banner.query.filter_by(status='normal', ativo=True).all()
@@ -125,10 +121,6 @@ def central_verificacao():
         total_turmas=total_turmas,
         total_grupos=total_grupos,
         total_avisos=total_avisos,
-        estado_consulta_publica=estado_consulta_publica,
-        estado_portal_estudante=estado_portal_estudante,
-        portal_notas_aberto=portal_notas_aberto,
-        portal_pauta_aberto=portal_pauta_aberto,
         alunos=alunos,
         aluno_pesquisado=aluno_pesquisado,
         senha_portal=SENHA_PORTAL_ALUNO,
@@ -146,7 +138,6 @@ def central_verificacao():
 @login_required
 def controlar_sistema():
     acao = request.form.get('acao')
-
     config = ConfiguracaoSistema.query.first()
     if not config:
         config = ConfiguracaoSistema()

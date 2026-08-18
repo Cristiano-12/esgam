@@ -436,16 +436,16 @@ def _localizar_linha_cabecalho(linhas_brutas, limite=15):
 
 
 def _extrair_classe_turma_do_titulo(linhas_brutas, limite=10):
-    """Procura, nas primeiras linhas, um título tipo 'PAUTA...11ª Classe GRUPO: A TURMA: B'."""
+    """Título tipo 'PAUTA...11ª Classe GRUPO: A TURMA: B' → (classe, turma, grupo)."""
     for linha in linhas_brutas[:limite]:
         texto = " ".join(str(c) for c in (linha or []) if c is not None)
         if not texto:
             continue
-        if "grupo" not in _normalizar(texto) and "turma" not in _normalizar(texto):
+        norm = _normalizar(texto)
+        if "classe" not in norm and "grupo" not in norm and "turma" not in norm:
             continue
 
-        classe = None
-        turma = None
+        classe = turma = grupo = None
 
         m_classe = re.search(r"(\d+)\s*ª?\s*classe", texto, re.IGNORECASE)
         if m_classe:
@@ -453,12 +453,16 @@ def _extrair_classe_turma_do_titulo(linhas_brutas, limite=10):
 
         m_turma = re.search(r"turma[:\s]+([A-Za-z0-9]+)", texto, re.IGNORECASE)
         if m_turma:
-            turma = m_turma.group(1)
+            turma = m_turma.group(1).upper()
 
-        if classe or turma:
-            return classe, turma
+        m_grupo = re.search(r"grupo[:\s]+([A-Za-z0-9]+)", texto, re.IGNORECASE)
+        if m_grupo:
+            grupo = m_grupo.group(1).upper()
 
-    return None, None
+        if classe or turma or grupo:
+            return classe, turma, grupo
+
+    return None, None, None
 
 
 def _mapear_disciplinas_formato_largo(linha_cabecalho, coluna_nome):
@@ -562,7 +566,7 @@ def _ler_linhas_excel(conteudo_bytes):
             return None, ("Encontrei a coluna 'Nome', mas não consegui identificar nenhuma "
                            "disciplina no cabeçalho. Confirme o formato do ficheiro.")
 
-        classe_detetada, turma_detetada = _extrair_classe_turma_do_titulo(linhas_brutas[:indice_cabecalho])
+        classe_detetada, turma_detetada, grupo_detetado = _extrair_classe_turma_do_titulo(linhas_brutas[:indice_cabecalho])
 
         for linha in linhas_brutas[indice_cabecalho + 1:]:
             nome = linha[coluna_nome] if coluna_nome < len(linha) else None
@@ -584,6 +588,7 @@ def _ler_linhas_excel(conteudo_bytes):
                     "nome": nome,
                     "classe": classe_detetada or "",
                     "turma": turma_detetada or "",
+                    "grupo": grupo_detetado or "",
                     "periodo": "",
                     "disciplina": str(nome_disciplina).strip(),
                     "nota_ac": para_float(valores[0] if len(valores) > 0 else None),
@@ -720,19 +725,84 @@ def _turma_ja_tem_notas(classe, turma, periodo):
     return q.first() is not None
 
 
+def _garantir_hierarquia(classe_str, turma_str=None, grupo_str=None):
+    """Cria/obtém Classe, Grupo e Turma. Devolve (classe_id, grupo_id, turma_id)."""
+    classe_id = grupo_id = turma_id = None
+    if not classe_str:
+        return None, None, None
+
+    classe_str = str(classe_str).strip()
+    classe_obj = None
+    if classe_str.isdigit():
+        n = int(classe_str)
+        classe_obj = Classe.query.filter_by(numero=n, deleted_at=None).first()
+        if not classe_obj:
+            classe_obj = Classe(numero=n, nome=f"{n}ª Classe")
+            db.session.add(classe_obj)
+            db.session.flush()
+    if not classe_obj:
+        classe_obj = Classe.query.filter(
+            Classe.deleted_at.is_(None),
+            Classe.nome.ilike(f"%{classe_str}%"),
+        ).first()
+    if classe_obj:
+        classe_id = classe_obj.id
+
+    if classe_id and grupo_str:
+        g = str(grupo_str).strip().upper()
+        grupo_obj = Grupo.query.filter_by(nome=g, classe_id=classe_id, deleted_at=None).first()
+        if not grupo_obj:
+            grupo_obj = Grupo(nome=g, classe_id=classe_id)
+            db.session.add(grupo_obj)
+            db.session.flush()
+        grupo_id = grupo_obj.id
+
+    if classe_id and turma_str:
+        t = str(turma_str).strip().upper()
+        q = Turma.query.filter_by(nome=t, classe_id=classe_id, deleted_at=None)
+        if grupo_id:
+            q = q.filter_by(grupo_id=grupo_id)
+        turma_obj = q.first()
+        if not turma_obj:
+            turma_obj = Turma(nome=t, classe_id=classe_id, grupo_id=grupo_id)
+            db.session.add(turma_obj)
+            db.session.flush()
+        turma_id = turma_obj.id
+
+    return classe_id, grupo_id, turma_id
+
+
+def _aplicar_hierarquia_aluno(aluno, dados):
+    c_id, g_id, t_id = _garantir_hierarquia(
+        dados.get("classe"), dados.get("turma"), dados.get("grupo")
+    )
+    if c_id:
+        aluno.classe_id = c_id
+    if g_id:
+        aluno.grupo_id = g_id
+    if t_id:
+        aluno.turma_id = t_id
+
+
+def _substituir_notas_turma(classe, turma):
+    """Apaga notas antigas da mesma classe+turma (republicação)."""
+    if not classe and not turma:
+        return 0
+    q = Nota.query
+    if classe:
+        q = q.filter(Nota.classe.ilike(f"%{str(classe).strip()}%"))
+    if turma:
+        q = q.filter(Nota.turma.ilike(f"%{str(turma).strip()}%"))
+    n = q.count()
+    q.delete(synchronize_session=False)
+    return n
+
+
 def _criar_aluno_automatico(dados):
-    """Cria aluno com ID imprevisível. Senha de acesso = ESGAM000 (fixa para todos)."""
+    """Cria aluno ESG e liga classe/grupo/turma da pauta."""
     codigo = _gerar_codigo_estudante_unico()
     aluno = Aluno(nome=dados["nome"], codigo_estudante=codigo)
-    if dados.get("classe"):
-        classe_str = str(dados["classe"]).strip()
-        classe_obj = None
-        if classe_str.isdigit():
-            classe_obj = Classe.query.filter_by(numero=int(classe_str), deleted_at=None).first()
-        if not classe_obj:
-            classe_obj = Classe.query.filter_by(nome=classe_str, deleted_at=None).first()
-        if classe_obj:
-            aluno.classe_id = classe_obj.id
+    _aplicar_hierarquia_aluno(aluno, dados)
     db.session.add(aluno)
     db.session.flush()
     return aluno
@@ -753,73 +823,48 @@ def _guardar_nota(aluno_id, dados):
     ))
 
 
-def _processar_linha_pauta(dados, arquivo_nome):
+def _processar_linha_pauta(dados, arquivo_nome, modo_substituicao=False):
     """
-    Lógica inteligente (responsabilidade do controle):
-    - 1ª vez da turma+período → importa tudo e cria alunos novos automaticamente.
-    - Se a turma+período JÁ tem notas → só cria pendência para novos / conflitos.
+    Importa uma linha da pauta.
+    modo_substituicao=True: notas da turma já foram limpas — grava sem pendência de duplicado.
     """
     if not dados.get("disciplina"):
         return "ignorado"
-
-    primeira_vez = not _turma_ja_tem_notas(
-        dados.get("classe"), dados.get("turma"), dados.get("periodo")
-    )
 
     aluno_exato, aluno_semelhante = _localizar_aluno(
         dados.get("matricula"), dados.get("nome"), dados.get("classe")
     )
 
-    # Aluno já existe
     if aluno_exato:
-        nota_existente = Nota.query.filter_by(
-            aluno_id=aluno_exato.id,
-            disciplina=dados["disciplina"],
-            classe=dados.get("classe"),
-            turma=dados.get("turma"),
-            periodo=dados.get("periodo"),
-        ).first()
-
-        if nota_existente:
-            _registar_pendencia(
-                "duplicado", arquivo_nome, dados,
-                nome_banco=aluno_exato.nome,
-                descricao=(f"Já existe nota de {dados['disciplina']} para {aluno_exato.nome} "
-                           f"neste período. Confirme se pretende substituir."),
-                aluno_id=aluno_exato.id,
-            )
-            return "duplicado"
-
+        _aplicar_hierarquia_aluno(aluno_exato, dados)
+        q = Nota.query.filter_by(aluno_id=aluno_exato.id, disciplina=dados["disciplina"])
+        if dados.get("periodo"):
+            q = q.filter_by(periodo=dados.get("periodo"))
+        if dados.get("classe"):
+            q = q.filter(Nota.classe.ilike(f"%{dados.get('classe')}%"))
+        if dados.get("turma"):
+            q = q.filter(Nota.turma.ilike(f"%{dados.get('turma')}%"))
+        existentes = q.all()
+        for n in existentes:
+            db.session.delete(n)
         _guardar_nota(aluno_exato.id, dados)
-        return "importado"
+        return "substituido" if existentes else "importado"
 
-    # Nome parecido
-    if aluno_semelhante:
-        if primeira_vez:
-            aluno = _criar_aluno_automatico(dados)
-            _guardar_nota(aluno.id, dados)
-            return "importado"
-
+    if aluno_semelhante and not modo_substituicao:
         _registar_pendencia(
             "nome", arquivo_nome, dados,
             nome_banco=aluno_semelhante.nome,
-            descricao=(f'O nome "{dados["nome"]}" não corresponde exatamente. '
-                       f'Encontrámos "{aluno_semelhante.nome}". Confirme se é o mesmo.'),
+            descricao=(
+                f'O nome "{dados["nome"]}" não corresponde exatamente. '
+                f'Encontrámos "{aluno_semelhante.nome}". Confirme se é o mesmo.'
+            ),
         )
         return "nome"
 
-    # Aluno totalmente novo
-    if primeira_vez:
-        aluno = _criar_aluno_automatico(dados)
-        _guardar_nota(aluno.id, dados)
-        return "importado"
-
-    _registar_pendencia(
-        "novo", arquivo_nome, dados,
-        descricao=(f'O aluno "{dados["nome"]}" não existe e esta turma já tem notas '
-                   f'neste período. Confirme se pretende registá-lo.'),
-    )
+    aluno = _criar_aluno_automatico(dados)
+    _guardar_nota(aluno.id, dados)
     return "novo"
+
 
 
 @controle_bp.route('/admin/banner', methods=['POST'])
@@ -1117,19 +1162,48 @@ def upload_pauta():
                 if erro_leitura:
                     mensagens_erro.append(f'"{arquivo.filename}": {erro_leitura}')
                 else:
-                    contadores = {"importado": 0, "duplicado": 0, "nome": 0, "novo": 0, "ignorado": 0}
+                    amostra = next((d for d in linhas if d.get("classe") or d.get("turma")), {})
+                    classe_p = (amostra.get("classe") or "").strip()
+                    turma_p = (amostra.get("turma") or "").strip()
+                    grupo_p = (amostra.get("grupo") or "").strip()
+
+                    modo_sub = False
+                    removidas = 0
+                    if classe_p or turma_p:
+                        if _turma_ja_tem_notas(classe_p, turma_p, None):
+                            removidas = _substituir_notas_turma(classe_p, turma_p)
+                            modo_sub = True
+
+                    _garantir_hierarquia(classe_p, turma_p, grupo_p)
+
+                    contadores = {
+                        "importado": 0, "substituido": 0, "duplicado": 0,
+                        "nome": 0, "novo": 0, "ignorado": 0,
+                    }
                     for dados in linhas:
-                        resultado = _processar_linha_pauta(dados, nome_original)
+                        if grupo_p and not dados.get("grupo"):
+                            dados["grupo"] = grupo_p
+                        resultado = _processar_linha_pauta(
+                            dados, nome_original, modo_substituicao=modo_sub
+                        )
                         contadores[resultado] = contadores.get(resultado, 0) + 1
                     try:
                         db.session.commit()
-                        flash(
-                            f'"{arquivo.filename}": {contadores["importado"]} importado(s), '
-                            f'{contadores["duplicado"]} duplicado(s), '
-                            f'{contadores["nome"]} nome(s) a confirmar, '
-                            f'{contadores["novo"]} novo(s).',
-                            'pauta'
-                        )
+                        if modo_sub:
+                            flash(
+                                f'"{arquivo.filename}": pauta {classe_p or "?"}ª turma {turma_p or "?"} '
+                                f'substituída ({removidas} notas antigas; '
+                                f'{contadores["importado"] + contadores["substituido"]} gravadas; '
+                                f'{contadores["novo"]} alunos novos).',
+                                'pauta'
+                            )
+                        else:
+                            flash(
+                                f'"{arquivo.filename}": {contadores["importado"]} importado(s), '
+                                f'{contadores["novo"]} novo(s), '
+                                f'{contadores["nome"]} nome(s) a confirmar.',
+                                'pauta'
+                            )
                     except Exception as e:
                         db.session.rollback()
                         mensagens_erro.append(f'"{arquivo.filename}": erro ao processar linhas — {str(e)}')

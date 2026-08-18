@@ -38,7 +38,6 @@
                 </section>
             </div>
 
-            <!-- Lista de IDs / códigos -->
             <section class="card" style="margin-bottom: 30px;">
                 <h2>Lista de alunos e credenciais</h2>
                 <p class="card-subtitle">
@@ -84,6 +83,16 @@
                         <button type="submit" class="btn-primary" style="width: auto; padding: 12px 20px;">Filtrar</button>
                     </div>
                 </form>
+
+                {% if alunos %}
+                <div style="margin-bottom: 14px;">
+                    <button type="button" class="btn-secondary btn-small" id="btn-copiar-todos" style="width: auto;"
+                        data-lista="{% for aluno in alunos %}{{ aluno.nome }} - {{ aluno.codigo_estudante or ('#' ~ aluno.id) }}
+{% endfor %}">
+                        Copiar todos os nomes e IDs ({{ alunos|length }})
+                    </button>
+                </div>
+                {% endif %}
 
                 <div class="table-container">
                     <table class="table-lixeira">
@@ -132,20 +141,19 @@
                 </div>
             </section>
 
-            <!-- Pesquisa + resultado -->
             <div class="admin-grid" style="margin-bottom: 30px;">
 
                 <section class="card">
                     <h2>Pesquisar aluno</h2>
                     <p class="card-subtitle">
-                        Pode usar o código ESG-…, o ID interno ou parte do nome.
+                        Pesquisa só por código (ESG-…) ou ID interno — não por nome.
                     </p>
                     <form method="GET" action="{{ url_for('visao_geral.central_verificacao') }}">
                         <div class="form-group">
-                            <label>Código / ID / Nome</label>
+                            <label>Código ou ID</label>
                             <input type="text" name="pesquisa_id"
                                 value="{{ request.args.get('pesquisa_id', '') }}"
-                                placeholder="Ex.: ESG-A3F9K2 ou nome do aluno" required>
+                                placeholder="Ex.: ESG-A3F9K2 ou 42" required>
                         </div>
                         <button type="submit" class="btn-primary">Procurar</button>
                     </form>
@@ -182,6 +190,12 @@
                             class="btn-secondary" style="text-decoration: none; text-align: center;">
                             Editar Aluno
                         </a>
+                    </div>
+                    <div class="action-buttons-row" style="margin-top: 10px;">
+                        <button type="button" class="btn-secondary btn-small" id="btn-copiar-nome-id" style="width: auto;"
+                            data-texto="{{ aluno_pesquisado.nome }} - {{ aluno_pesquisado.codigo_estudante or ('#' ~ aluno_pesquisado.id) }}">
+                            Copiar nome e ID juntos
+                        </button>
                     </div>
                     {% else %}
                     <div style="text-align: center; padding: 36px 16px; color: #64748b;">
