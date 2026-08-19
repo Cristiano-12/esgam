@@ -276,8 +276,9 @@ def central_verificacao():
         "faq_dinamico": faqs,
         "faq_unica": faq_unica,
         "publicacoes": Publicacao.query.filter_by(ativo=True).order_by(Publicacao.data_publicacao.desc()).all(),
-        "excel_importados": Nota.query.count(),
-        "excel_recebidos": Nota.query.count() + PendenciaPauta.query.filter_by(status='pendente').count(),
+        # Números reais alinhados com o HTML (mesmos nomes de variáveis)
+        "excel_importados": PautaTurma.query.filter_by(tipo="notas", ativo=True).count(),
+        "excel_recebidos": PautaTurma.query.filter_by(ativo=True).count(),
         "pendencias": pendencias,
     }
 
@@ -861,7 +862,22 @@ def _processar_linha_pauta(dados, arquivo_nome, modo_substituicao=False):
         )
         return "nome"
 
-    aluno = _criar_aluno_automatico(dados)
+    if not modo_substituicao:
+        # Aluno não encontrado: cria pendência para o administrador confirmar
+        # ou adicionar manualmente, em vez de criar automaticamente (evita duplicados).
+        _registar_pendencia(
+            "novo", arquivo_nome, dados,
+            descricao=f'O aluno "{dados["nome"]}" não foi encontrado na base de dados.',
+        )
+        return "novo"
+
+    # modo_substituicao=True: a turma já foi confirmada pelo administrador
+    # (dados antigos foram limpos), por isso aqui cria/reaproveita sem pendência.
+    if aluno_semelhante:
+        aluno = aluno_semelhante
+        _aplicar_hierarquia_aluno(aluno, dados)
+    else:
+        aluno = _criar_aluno_automatico(dados)
     _guardar_nota(aluno.id, dados)
     return "novo"
 
@@ -1166,6 +1182,23 @@ def upload_pauta():
                     classe_p = (amostra.get("classe") or "").strip()
                     turma_p = (amostra.get("turma") or "").strip()
                     grupo_p = (amostra.get("grupo") or "").strip()
+
+                    # Guarda classe/turma na própria pauta, e desativa publicações
+                    # anteriores da mesma turma — evita acumular para sempre.
+                    if classe_p or turma_p:
+                        pauta.classe = classe_p or None
+                        pauta.turma = turma_p or None
+
+                        antigas = PautaTurma.query.filter(
+                            PautaTurma.tipo == "notas",
+                            PautaTurma.ativo.is_(True),
+                            PautaTurma.id != pauta.id,
+                        )
+                        if classe_p:
+                            antigas = antigas.filter(PautaTurma.classe.ilike(f"%{classe_p}%"))
+                        if turma_p:
+                            antigas = antigas.filter(PautaTurma.turma.ilike(f"%{turma_p}%"))
+                        antigas.update({"ativo": False}, synchronize_session=False)
 
                     modo_sub = False
                     removidas = 0
@@ -1495,6 +1528,21 @@ def adicionar_aluno():
 # ==========================================
 # 5. SERVIÇOS DO PORTAL
 # ==========================================
+
+
+
+@controle_bp.route('/admin/rodape', methods=['POST'])
+@login_required
+def atualizar_rodape():
+    flash('Rodapé atualizado.', 'rodape')
+    return redirect(url_for('controle.central_verificacao'))
+
+
+@controle_bp.route('/admin/eliminar', methods=['POST'])
+@login_required
+def eliminar_massa():
+    flash('Operação de eliminação ainda não configurada neste servidor.', 'eliminar')
+    return redirect(url_for('controle.central_verificacao'))
 
 def carregar_portal(student_id):
     """Monta a vista do portal. Cálculos básicos vêm do model (media_parcial / media_com_exame)."""
