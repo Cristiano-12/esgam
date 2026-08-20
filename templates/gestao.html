@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestão de alunos - ESGAM</title>
-     <link rel="stylesheet" href="{{ url_for('static', filename='controle.css') }}">
-      <link rel="stylesheet" href="{{ url_for('static', filename='global.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='controle.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='global.css') }}">
 </head>
 <body>
-    <a href="{{ url_for('controle.central_verificacao') }}" class="top-corner-link" aria-label="Voltar para o controlo">←</a>
+    <a href="{{ url_for('controle.central_verificacao') }}" class="top-corner-link" aria-label="Voltar">←</a>
 
     <main class="dashboard">
         <div class="form-container">
@@ -16,171 +16,128 @@
             <section class="card">
                 <h2>Gestão de alunos</h2>
                 <p class="card-subtitle">
-                    Pesquise, edite, elimine ou restaure estudantes registados no sistema.
+                    Aqui só se altera o <strong>nome</strong> do aluno. Use o código ESG de acesso.
                 </p>
             </section>
 
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for cat, mensagem in messages %}
+            <div class="flash {{ 'error' if cat in ['danger', 'erro'] else ('warning' if cat == 'warning' else 'success') }}">
+                <span>{{ mensagem }}</span>
+                <button type="button" class="flash-close" aria-label="Fechar">&times;</button>
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
             <section class="card">
-                <h3>Pesquisar Alunos</h3>
-                <form action="/admin/gestao-alunos" method="GET" class="admin-form">
+                <h3>Pesquisar aluno</h3>
+                <form action="{{ url_for('gestao.gestao_alunos') }}" method="GET">
                     <div class="form-group">
-                        <label for="pesquisaAluno">ID</label>
-                        <input type="text" id="pesquisa-aluno" name="pesquisa" placeholder="Digite o ID do estudante">
+                        <label for="pesquisa-aluno">Código ESG</label>
+                        <input type="text" id="pesquisa-aluno" name="pesquisa"
+                               value="{{ pesquisa or '' }}"
+                               placeholder="Ex.: ESG-A3F9K2">
                     </div>
                     <button type="submit" class="btn-primary">Procurar</button>
                 </form>
             </section>
 
+            {% if aluno_edicao %}
+            <section class="card" id="bloco-edicao">
+                <h3>Editar nome</h3>
+                <p class="card-subtitle">
+                    Código:
+                    <strong style="color:#2563eb;">{{ aluno_edicao.codigo_estudante or '—' }}</strong>
+                    · Classe: {{ aluno_edicao.classe_nome or '—' }}
+                    · Grupo: {{ aluno_edicao.grupo_nome or '—' }}
+                    · Turma: {{ aluno_edicao.turma_nome or '—' }}
+                </p>
+
+                <form action="{{ url_for('gestao.guardar_alteracoes', aluno_id=aluno_edicao.id) }}" method="POST">
+                    <div class="form-group">
+                        <label>Nome completo</label>
+                        <input type="text" name="nome" value="{{ aluno_edicao.nome }}" required
+                               style="text-transform: none;">
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button type="submit" class="btn-primary" style="flex: 1;">Guardar nome</button>
+                        <a href="{{ url_for('visao_geral.central_verificacao') }}" class="btn-secondary"
+                           style="text-decoration: none; text-align: center; padding: 10px 18px;">
+                            Visão Geral
+                        </a>
+                    </div>
+                </form>
+
+                <form action="{{ url_for('gestao.eliminar_aluno', aluno_id=aluno_edicao.id) }}" method="POST"
+                      style="margin-top: 16px;"
+                      onsubmit="return confirm('Enviar este aluno para a lixeira?');">
+                    <button type="submit" class="btn-danger">Eliminar (lixeira)</button>
+                </form>
+            </section>
+
+            {% elif pesquisa %}
             <section class="card">
-                <h3>Resultados Encontrados</h3>
+                <h3>Resultados</h3>
+                {% if alunos %}
                 <div class="table-container">
-                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <table class="table-lixeira">
                         <thead>
-                            <tr style="border-bottom: 2px solid #cbd5e1;">
-                                <th style="padding: 10px 8px;">ID</th>
-                                <th style="padding: 10px 8px;">Nome</th>
-                                <th style="padding: 10px 8px;">Classe</th>
-                                <th style="padding: 10px 8px;">Turma</th>
-                                <th style="padding: 10px 8px;">Grupo</th>
-                                <th style="padding: 10px 8px;">Situação</th>
-                                <th style="padding: 10px 8px;">Estado</th>
-                                <th style="padding: 10px 8px; text-align: center;">Ações</th>
+                            <tr>
+                                <th>Código</th>
+                                <th>Nome</th>
+                                <th>Classe</th>
+                                <th>Grupo</th>
+                                <th>Turma</th>
+                                <th class="td-center">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for aluno in alunos %}
-                            <tr style="border-bottom: 1px solid #e2e8f0;">
-                                <td style="padding: 12px 8px; font-weight: bold;">{{ aluno.id }}</td>
-                                <td style="padding: 12px 8px; text-transform: uppercase; font-size: 13px;">{{ aluno.nome }}</td>
-                                <td style="padding: 12px 8px;">{{ aluno.classe }}ª</td>
-                                <td style="padding: 12px 8px; font-weight: bold;">{{ aluno.turma }}</td>
-                                <td style="padding: 12px 8px;">Grupo {{ aluno.grupo }}</td>
-                                <td style="padding: 12px 8px;">
-                                    <span class="text-highlight">
-                                        {{ aluno.situacao }}
-                                    </span>
-                                </td>
-
-                                <td style="padding: 12px 8px;">{{ aluno.estado }}</td>
-                                
-                                <td style="padding: 12px 8px; text-align: center;">
-                                    <div class="action-buttons-row" style="display: flex; justify-content: center; gap: 8px; margin: 0; padding: 0;">
-                                        <form action="/admin/editar-aluno/{{ aluno.id }}" method="GET" style="display: inline;">
-                                            <button type="submit" class="btn-secondary" style="padding: 6px 12px; font-size: 13px; width: auto;">
-                                                Editar
-                                            </button>
-                                        </form>
-                                        <form action="/admin/eliminar-aluno/{{ aluno.id }}" method="POST" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja enviar este aluno para a lixeira?');">
-                                            <button type="submit" class="btn-danger" style="padding: 6px 12px; font-size: 13px; width: auto;">
-                                                Eliminar
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% else %}
                             <tr>
-                                <td colspan="8" style="padding: 20px; text-align: center; color: #64748b;">
-                                    Nenhum aluno encontrado ou listado. Faça uma pesquisa acima.
+                                <td class="text-bold" style="color:#2563eb;">
+                                    {{ aluno.codigo_estudante or '—' }}
+                                </td>
+                                <td>{{ aluno.nome }}</td>
+                                <td>{{ aluno.classe_nome or '—' }}</td>
+                                <td>{{ aluno.grupo_nome or '—' }}</td>
+                                <td>{{ aluno.turma_nome or '—' }}</td>
+                                <td class="td-center">
+                                    <a href="{{ url_for('gestao.editar_aluno', aluno_id=aluno.id) }}"
+                                       class="btn-secondary btn-small" style="text-decoration:none;">
+                                        Editar nome
+                                    </a>
                                 </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
+                {% else %}
+                <p class="card-subtitle">Nenhum aluno encontrado para «{{ pesquisa }}».</p>
+                {% endif %}
             </section>
-
-            {% if aluno_edicao %}
-            <section class="card" id="bloco-edicao">
-                <h3>Editar Aluno (ID: {{ aluno_edicao.id }})</h3>
-                <form action="/admin/guardar-alteracoes/{{ aluno_edicao.id}}" method="POST" class="admin-form">
-
-                    <div class="form-group">
-                        <label>ID do Estudante</label>
-                        <input type="text" value="{{ aluno_edicao.id }}" readonly style="background:#f8fafc; font-weight:bold; color:#1e293b;">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Nome Completo</label>
-                        <input type="text" name="nome" value="{{ aluno_edicao.nome }}" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Classe</label>
-                        <select name="classe">
-                            <option value="10" {% if aluno_edicao.classe == 10 or aluno_edicao.classe == '10' %} selected{% endif %}>10ª classe</option>
-                            <option value="11" {% if aluno_edicao.classe == 11 or aluno_edicao.classe == '11' %} selected{% endif %}>11ª classe</option>
-                            <option value="12" {% if aluno_edicao.classe == 12 or aluno_edicao.classe == '12' %} selected{% endif %}>12ª classe</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Turma</label>
-                        <select name="turma">
-                            {% for letra in ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'] %}
-                            <option value="{{ letra }}" {% if aluno_edicao.turma == letra %}selected{% endif %}>
-                                Turma {{ letra }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Grupo</label>
-                        <select name="grupo">
-                            <option value="A" {% if aluno_edicao.grupo == 'A' %}selected{% endif %}>Grupo A</option>
-                            <option value="B" {% if aluno_edicao.grupo == 'B' %}selected{% endif %}>Grupo B</option>
-                            <option value="C" {% if aluno_edicao.grupo == 'C' %}selected{% endif %}>Grupo C</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Situação Académica</label>
-                        <select name="situacao">
-                            <option value="Aprovado" {% if aluno_edicao.situacao == 'Aprovado' %}selected{% endif %}>Aprovado</option>
-                            <option value="Reprovado" {% if aluno_edicao.situacao == 'Reprovado' %}selected{% endif %}>Reprovado</option>
-                            <option value="Reprovado por comportamento" {% if aluno_edicao.situacao == 'Reprovado por comportamento' %}selected{% endif %}>Reprovado por comportamento</option>
-                            <option value="Transferido" {% if aluno_edicao.situacao == 'Transferido' %}selected{% endif %}>Transferido</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Estado</label>
-                        <select name="estado">
-                            <option value="Ativo" {% if aluno_edicao.estado == 'Ativo' %}selected{% endif %}>Ativo</option>
-                            <option value="Bloqueado" {% if aluno_edicao.estado == 'Bloqueado' %}selected{% endif %}>Bloqueado</option>
-                        </select>
-                    </div>
-
-                    <div style="display: flex; gap: 10px; margin-top: 15px;">
-                        <button type="submit" class="btn-primary" style="flex: 1;">Guardar Alteração</button>
-                        <a href="/admin/gestao-alunos" class="btn-secondary" style="text-decoration: none; display: inline-block; text-align: center; line-height: 40px; padding: 0 20px;">Cancelar</a>
-                    </div>
-                </form>
+            {% else %}
+            <section class="card">
+                <p class="card-subtitle" style="text-align:center; padding: 24px;">
+                    Pesquise pelo código ESG, ou abra um aluno a partir da Visão Geral.
+                </p>
             </section>
             {% endif %}
 
-            <section class="card">
-                <h2>Lixeira Temporária</h2>
-                <p class="card-subtitle">
-                    Os estudantes eliminados permanecem armazenados durante 10 dias antes da remoção definitiva.
-                </p>
-                <div class="vertical-actions" style="align-items: center; margin-top: 15px;">
-                    <a href="/lixeira.html" class="btn btn-secondary" style="text-decoration: none; display: inline-block;">
-                        Ver alunos eliminados
-                    </a>
-                </div>
-            </section>
-
-            <div style="margin-top: 30px; text-align: center;">
-                <a href="/controle.html" class="btn-secondary" style="text-decoration: none; display: inline-block; padding: 10px 20px;">
-                    Voltar para o Painel principal
+            <div style="margin-top: 24px; text-align: center;">
+                <a href="{{ url_for('controle.central_verificacao') }}" class="btn-secondary"
+                   style="text-decoration: none; display: inline-block; padding: 10px 20px;">
+                    Voltar ao Controlo
                 </a>
             </div>
 
         </div>
     </main>
 
+    <script src="{{ url_for('static', filename='login.js') }}"></script>
+
 </body>
 </html>
-

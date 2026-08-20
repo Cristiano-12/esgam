@@ -729,13 +729,12 @@
                             Visão Geral
                         </a>
 
-                        <a href="{{ url_for('registar_aluno.pagina_registar_aluno') }}" class="btn btn-primary">
-                            Novo Aluno
-                        </a>
-
-
                         <a href="{{ url_for('gestao.gestao_alunos') }}" class="btn btn-secondary">
                             Editar Aluno
+                        </a>
+
+                        <a href="{{ url_for('lixeira.index') }}" class="btn btn-secondary">
+                            Ver Lixeira
                         </a>
 
                     </div>
@@ -775,20 +774,6 @@
                         </button>
                     </form>
 
-                </section>
-
-                <section class="card">
-                    <h2>Lixeira Temporária</h2>
-
-                    <p class="card-subtitle">
-                        Consulte, pesquise e restaure registos eliminados temporariamente.
-                    </p>
-
-                    <div class="vertical-actions">
-                        <a href="{{ url_for('lixeira.index') }}" class="btn btn-secondary">
-                            Ver Lixeira
-                        </a>
-                    </div>
                 </section>
 
             </div>
