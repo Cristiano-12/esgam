@@ -643,7 +643,6 @@
 
                 <section class="card">
                     <h2>Publicar Aviso</h2>
-
                     {% with messages = get_flashed_messages(category_filter=["aviso"]) %}
                     {% if messages %}
                     {% for mensagem in messages %}
@@ -654,24 +653,22 @@
                     {% endfor %}
                     {% endif %}
                     {% endwith %}
-
+                    <p class="card-subtitle">Aparece em baixo no portal. Todos = todos com acesso; ou só uma classe.</p>
                     <form action="/admin/publicar-aviso" method="POST">
-
                         <div class="form-group">
-                            <label for="destinoAviso">Destino</label>
-                            <input type="text" id="destino-aviso" name="destino" maxlength="5"
-                                placeholder="Ex.: TODOS | 10A | ID" required>
+                            <label for="destino-aviso">Destino</label>
+                            <select id="destino-aviso" name="destino" required>
+                                <option value="TODOS">Todos os alunos</option>
+                                <option value="10">10ª Classe</option>
+                                <option value="11">11ª Classe</option>
+                                <option value="12">12ª Classe</option>
+                            </select>
                         </div>
-
                         <div class="form-group">
-                            <label for="msgAviso">Mensagem</label>
+                            <label for="msg-aviso">Mensagem</label>
                             <textarea id="msg-aviso" name="mensagem" maxlength="100" placeholder="Digite o aviso..." required></textarea>
                         </div>
-
-                        <button type="submit" class="btn-primary">
-                            Publicar Aviso
-                        </button>
-
+                        <button type="submit" class="btn-primary">Publicar Aviso</button>
                     </form>
                 </section>
 
@@ -743,7 +740,6 @@
 
                 <section class="card">
                     <h2>Operações em Massa</h2>
-
                     {% with messages = get_flashed_messages(category_filter=["eliminar"]) %}
                     {% if messages %}
                     {% for mensagem in messages %}
@@ -754,26 +750,27 @@
                     {% endfor %}
                     {% endif %}
                     {% endwith %}
-
                     <p class="card-subtitle">
-                        Elimine classes, grupos ou turmas usando um único campo. Os dados vão para a
-                        lixeira e podem ser restaurados durante 10 dias.
+                        Vai para a <strong>lixeira (10 dias)</strong>. Alunos eliminados
+                        <strong>perdem o acesso ao portal</strong> até serem restaurados.
                     </p>
-
+                    <ul style="margin:0 0 16px 18px;color:#475569;font-size:0.9rem;line-height:1.7;">
+                        <li><code>ESG-XXXX</code> — 1 aluno</li>
+                        <li><code>10</code> / <code>11</code> / <code>12</code> — classe inteira</li>
+                        <li><code>10A</code> — classe 10 + <strong>grupo</strong> A (A, B, C)</li>
+                        <li><code>10/A</code> — classe 10 + <strong>turma</strong> A (A–Z)</li>
+                        <li><code>10A/B</code> — classe 10 + grupo A + turma B</li>
+                        <li><code>TODOS</code> — tudo</li>
+                    </ul>
                     <form action="/admin/eliminar" method="POST"
-                        onsubmit="return confirm('Tens certeza que queres eliminar os registos selecionados?')">
+                        onsubmit="return confirm('Enviar para a lixeira? Os alunos perdem acesso ao portal.');">
                         <div class="form-group">
-                            <label for="eliminarValor">Eliminar</label>
+                            <label for="eliminar-valor">Eliminar</label>
                             <input type="text" id="eliminar-valor" name="eliminar" maxlength="40"
-                                placeholder="Ex.TODOS| 10 | 10A | 10/A | 10A/C | ID " required>
-
+                                placeholder="ESG-… | 10 | 10A | 10/A | 10A/B | TODOS" required>
                         </div>
-
-                        <button type="submit" class="btn-danger" style="margin-top: 20px;">
-                            Eliminar
-                        </button>
+                        <button type="submit" class="btn-danger" style="margin-top: 12px;">Eliminar</button>
                     </form>
-
                 </section>
 
             </div>

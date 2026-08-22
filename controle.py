@@ -1102,12 +1102,34 @@ def atualizar_faq():
 @controle_bp.route('/admin/publicar-aviso', methods=['POST'])
 @login_required
 def publicar_aviso():
-    destino = request.form.get('destino', '').strip()
-    mensagem = request.form.get('mensagem', '').strip()
-
-    if not destino or not mensagem:
-        flash('Destino e mensagem são obrigatórios.', 'aviso')
+    """Aviso para TODOS ou só uma classe (10/11/12). Aparece em baixo no portal."""
+    destino = (request.form.get('destino') or '').strip().upper()
+    mensagem = (request.form.get('mensagem') or '').strip()
+    if len(mensagem) > 100:
+        mensagem = mensagem[:100]
+    if destino not in ('TODOS', '10', '11', '12') or not mensagem:
+        flash('Escolha o destino (Todos ou classe) e escreva a mensagem.', 'aviso')
         return redirect(url_for('controle.central_verificacao'))
+    try:
+        anteriores = Aviso.query.filter_by(ativo=True).all()
+        for av in anteriores:
+            raw = (av.mensagem or '')
+            d = 'TODOS'
+            if raw.startswith('[') and ']' in raw:
+                d = raw[1:raw.index(']')].strip().upper()
+            if destino == 'TODOS' or d == destino:
+                av.ativo = False
+        db.session.add(Aviso(mensagem=f'[{destino}] {mensagem}', texto=mensagem, ativo=True))
+        db.session.commit()
+        if destino == 'TODOS':
+            flash('Aviso publicado para todos os alunos com acesso ao portal.', 'aviso')
+        else:
+            flash(f'Aviso publicado para a {destino}ª Classe.', 'aviso')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao publicar aviso: {str(e)}', 'aviso')
+    return redirect(url_for('controle.central_verificacao'))
+
 
     # Desativa avisos anteriores e publica o novo como ativo
     Aviso.query.filter_by(ativo=True).update({'ativo': False})
@@ -1541,8 +1563,141 @@ def atualizar_rodape():
 @controle_bp.route('/admin/eliminar', methods=['POST'])
 @login_required
 def eliminar_massa():
-    flash('Operação de eliminação ainda não configurada neste servidor.', 'eliminar')
+    """Soft-delete → lixeira 10 dias. Alunos perdem acesso ao portal.
+
+    ESG-xxx  → 1 aluno (só código ESG)
+    10       → classe inteira
+    10A      → classe + grupo (A/B/C)
+    10/A     → classe + turma (A–Z)
+    10A/B    → classe + grupo + turma
+    TODOS    → tudo
+    """
+    raw = (request.form.get('eliminar') or '').strip()
+    if not raw:
+        flash('Indique o que pretende eliminar.', 'eliminar')
+        return redirect(url_for('controle.central_verificacao'))
+
+    agora = datetime.now()
+    motivo = f'Eliminação em massa ({raw})'
+    token = raw.upper().replace(' ', '')
+
+    def soft(obj):
+        obj.deleted_at = agora
+        if hasattr(obj, 'motivo_eliminacao'):
+            obj.motivo_eliminacao = motivo
+
+    def soft_alunos(q):
+        n = 0
+        for a in q.filter(Aluno.deleted_at.is_(None)).all():
+            soft(a)
+            n += 1
+        return n
+
+    try:
+        if token == 'TODOS':
+            n = soft_alunos(Aluno.query)
+            for model in (Turma, Grupo, Classe):
+                for row in model.query.filter(model.deleted_at.is_(None)).all():
+                    soft(row)
+            db.session.commit()
+            flash(f'TUDO na lixeira ({n} aluno(s)). Sem acesso ao portal.', 'eliminar')
+            return redirect(url_for('controle.central_verificacao'))
+
+        if token.startswith('ESG'):
+            aluno = Aluno.query.filter(
+                Aluno.deleted_at.is_(None),
+                Aluno.codigo_estudante.ilike(token),
+            ).first()
+            if not aluno:
+                flash('Aluno não encontrado. Use o código ESG-…', 'eliminar')
+                return redirect(url_for('controle.central_verificacao'))
+            soft(aluno)
+            db.session.commit()
+            flash(f'Aluno {aluno.codigo_estudante} na lixeira (10 dias). Sem acesso ao portal.', 'eliminar')
+            return redirect(url_for('controle.central_verificacao'))
+
+        if token in ('10', '11', '12'):
+            classe = Classe.query.filter_by(numero=int(token), deleted_at=None).first()
+            if not classe:
+                flash(f'Classe {token} não encontrada.', 'eliminar')
+                return redirect(url_for('controle.central_verificacao'))
+            soft(classe)
+            for g in Grupo.query.filter_by(classe_id=classe.id, deleted_at=None).all():
+                soft(g)
+            for tu in Turma.query.filter_by(classe_id=classe.id, deleted_at=None).all():
+                soft(tu)
+            n = soft_alunos(Aluno.query.filter_by(classe_id=classe.id))
+            db.session.commit()
+            flash(f'{token}ª Classe na lixeira ({n} aluno(s)). Sem acesso ao portal.', 'eliminar')
+            return redirect(url_for('controle.central_verificacao'))
+
+        m3 = re.match(r'^(\d+)([A-C])/([A-Z])$', token)
+        if m3:
+            num, grp, tur = m3.group(1), m3.group(2), m3.group(3)
+            classe = Classe.query.filter_by(numero=int(num), deleted_at=None).first()
+            if not classe:
+                flash(f'Classe {num} não encontrada.', 'eliminar')
+                return redirect(url_for('controle.central_verificacao'))
+            grupo = Grupo.query.filter_by(classe_id=classe.id, nome=grp, deleted_at=None).first()
+            turma = None
+            if grupo:
+                turma = Turma.query.filter_by(
+                    classe_id=classe.id, grupo_id=grupo.id, nome=tur, deleted_at=None
+                ).first()
+            if not turma:
+                turma = Turma.query.filter_by(classe_id=classe.id, nome=tur, deleted_at=None).first()
+            if not turma:
+                flash(f'Turma {tur} (grupo {grp}, {num}ª) não encontrada.', 'eliminar')
+                return redirect(url_for('controle.central_verificacao'))
+            soft(turma)
+            n = soft_alunos(Aluno.query.filter_by(turma_id=turma.id))
+            db.session.commit()
+            flash(f'{num}ª · Grupo {grp} · Turma {tur} na lixeira ({n} aluno(s)).', 'eliminar')
+            return redirect(url_for('controle.central_verificacao'))
+
+        m_tur = re.match(r'^(\d+)/([A-Z])$', token)
+        if m_tur:
+            num, tur = m_tur.group(1), m_tur.group(2)
+            classe = Classe.query.filter_by(numero=int(num), deleted_at=None).first()
+            if not classe:
+                flash(f'Classe {num} não encontrada.', 'eliminar')
+                return redirect(url_for('controle.central_verificacao'))
+            turma = Turma.query.filter_by(classe_id=classe.id, nome=tur, deleted_at=None).first()
+            if not turma:
+                flash(f'Turma {tur} na {num}ª não encontrada.', 'eliminar')
+                return redirect(url_for('controle.central_verificacao'))
+            soft(turma)
+            n = soft_alunos(Aluno.query.filter_by(turma_id=turma.id))
+            db.session.commit()
+            flash(f'{num}ª · Turma {tur} na lixeira ({n} aluno(s)).', 'eliminar')
+            return redirect(url_for('controle.central_verificacao'))
+
+        m_grp = re.match(r'^(\d+)([A-C])$', token)
+        if m_grp:
+            num, grp = m_grp.group(1), m_grp.group(2)
+            classe = Classe.query.filter_by(numero=int(num), deleted_at=None).first()
+            if not classe:
+                flash(f'Classe {num} não encontrada.', 'eliminar')
+                return redirect(url_for('controle.central_verificacao'))
+            grupo = Grupo.query.filter_by(classe_id=classe.id, nome=grp, deleted_at=None).first()
+            if not grupo:
+                flash(f'Grupo {grp} na {num}ª não encontrado.', 'eliminar')
+                return redirect(url_for('controle.central_verificacao'))
+            soft(grupo)
+            for tu in Turma.query.filter_by(grupo_id=grupo.id, deleted_at=None).all():
+                soft(tu)
+            n = soft_alunos(Aluno.query.filter_by(grupo_id=grupo.id))
+            db.session.commit()
+            flash(f'{num}ª · Grupo {grp} na lixeira ({n} aluno(s)).', 'eliminar')
+            return redirect(url_for('controle.central_verificacao'))
+
+        flash('Formato inválido. Use: ESG-… | 10 | 10A | 10/A | 10A/B | TODOS', 'eliminar')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro na eliminação: {str(e)}', 'eliminar')
     return redirect(url_for('controle.central_verificacao'))
+
+
 
 def carregar_portal(student_id):
     """Monta a vista do portal. Cálculos básicos vêm do model (media_parcial / media_com_exame)."""
