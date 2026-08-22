@@ -154,6 +154,7 @@ def create_app():
             db.create_all()
             _garantir_colunas_pautas_turma(app)
             _garantir_colunas_notas(app)
+            _garantir_colunas_alunos(app)
 
             # Cria o utilizador admin apenas se não estiver a rodar no Vercel (ambiente local)
             if not os.getenv("VERCEL"):
@@ -223,6 +224,28 @@ def _garantir_colunas_notas(app):
                 app.logger.info("Coluna nota_exame adicionada à tabela %s", tabela)
     except Exception:
         app.logger.exception("Não foi possível garantir a coluna nota_exame.")
+
+
+def _garantir_colunas_alunos(app):
+    try:
+        engine = db.engine
+        insp = inspect(engine)
+        if "alunos" not in insp.get_table_names():
+            return
+        colunas = {col["name"] for col in insp.get_columns("alunos")}
+        alteracoes = []
+        if "situacao" not in colunas:
+            alteracoes.append("ALTER TABLE alunos ADD COLUMN situacao VARCHAR(80)")
+        if "aviso" not in colunas:
+            alteracoes.append("ALTER TABLE alunos ADD COLUMN aviso VARCHAR(120)")
+        if alteracoes:
+            with engine.begin() as conn:
+                for sql in alteracoes:
+                    conn.execute(text(sql))
+            app.logger.info("Tabela alunos atualizada: %s", ", ".join(alteracoes))
+    except Exception:
+        app.logger.exception("Não foi possível garantir colunas situacao/aviso em alunos.")
+
 
 
 app = create_app()

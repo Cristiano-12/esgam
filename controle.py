@@ -1554,7 +1554,7 @@ def carregar_portal(student_id):
                 "aluno": {
                     "id": student_id, "nome": "—", "classe": "0",
                     "turma": "—", "grupo": "—", "codigo": None,
-                    "media_geral": "—", "situacao": None,
+                    "media_geral": "—", "situacao": None, "aviso": None,
                 },
                 "pauta_disciplinas": [],
                 "aviso_painel": "Estudante não encontrado no sistema escolar."
@@ -1569,6 +1569,7 @@ def carregar_portal(student_id):
             "codigo": aluno.codigo_estudante or str(aluno.id),
             "media_geral": "—",
             "situacao": None,
+            "aviso": None,
         }
 
         notas = Nota.query.filter_by(aluno_id=student_id).all()
@@ -1586,7 +1587,7 @@ def carregar_portal(student_id):
             d = por_disciplina[n.disciplina]
             d["nome"] = n.disciplina
             periodo = (n.periodo or "").lower()
-            mf = n.media_parcial  # propriedade do model
+            mf = n.media_parcial
 
             if "1" in periodo or "primeiro" in periodo or "1º" in periodo:
                 d["t1_p1"], d["t1_p2"], d["t1_p3"], d["mf1"] = n.nota_ac, n.nota_pt, n.nota_ap, mf
@@ -1617,7 +1618,17 @@ def carregar_portal(student_id):
                         todas.append(d[k])
         if todas:
             aluno_view["media_geral"] = round(sum(todas) / len(todas), 1)
-            aluno_view["situacao"] = "Aprovado" if aluno_view["media_geral"] >= 10 else "Reprovado"
+
+        if getattr(aluno, "situacao", None):
+            aluno_view["situacao"] = aluno.situacao
+        elif aluno_view["media_geral"] not in (None, "—"):
+            try:
+                mg = float(aluno_view["media_geral"])
+                aluno_view["situacao"] = "Aprovado" if mg >= 10 else "Reprovado"
+            except (TypeError, ValueError):
+                pass
+
+        aluno_view["aviso"] = (getattr(aluno, "aviso", None) or "").strip() or None
 
         aviso_mensagem = None
         try:
@@ -1640,12 +1651,11 @@ def carregar_portal(student_id):
             "aluno": {
                 "id": student_id, "nome": "—", "classe": "0",
                 "turma": "—", "grupo": "—", "codigo": None,
-                "media_geral": "—", "situacao": None,
+                "media_geral": "—", "situacao": None, "aviso": None,
             },
             "pauta_disciplinas": [],
             "aviso_painel": "Erro ao carregar os dados.",
         }
-
 
 # ==========================================
 # 6. SERVIÇOS DE AUTENTICAÇÃO (LOGIN)

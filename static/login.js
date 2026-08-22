@@ -161,3 +161,41 @@ document.addEventListener('DOMContentLoaded', function () {
         restaurarScroll();
     }
 })();
+
+  function copiarTexto(texto, botao) {
+    if (!texto) return;
+    navigator.clipboard.writeText(texto).then(function () {
+        if (!botao) return;
+        var textoOriginal = botao.textContent;
+        botao.textContent = 'Copiado!';
+        setTimeout(function () { botao.textContent = textoOriginal; }, 1500);
+    });
+}
+
+var btnTodos = document.getElementById('btn-copiar-todos');
+if (btnTodos) {
+    btnTodos.addEventListener('click', function () {
+        copiarTexto(btnTodos.getAttribute('data-lista'), btnTodos);
+    });
+}
+
+var btnNomeId = document.getElementById('btn-copiar-nome-id');
+if (btnNomeId) {
+    btnNomeId.addEventListener('click', function () {
+        copiarTexto(btnNomeId.getAttribute('data-texto'), btnNomeId);
+    });
+}
+
+
+
+ document.querySelectorAll('.flash').forEach(function (flash) {
+    var btn = flash.querySelector('.flash-close');
+    if (btn) {
+        btn.addEventListener('click', function () {
+            flash.remove();
+        });
+    }
+    setTimeout(function () {
+        if (flash.parentNode) flash.remove();
+    }, 5000);
+});

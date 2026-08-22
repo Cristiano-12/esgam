@@ -110,9 +110,9 @@
                         <tbody>
                             {% for aluno in alunos %}
                             <tr>
-                                <td class="text-bold" style="text-transform: uppercase; font-size: 13px;">{{ aluno.nome }}</td>
+                                <td class="text-bold" style="font-size: 13px;">{{ aluno.nome }}</td>
                                 <td class="text-bold" style="color: #2563eb;">
-                                    {{ aluno.codigo_estudante or ('#' ~ aluno.id) }}
+                                    {{ aluno.codigo_estudante or '—' }}
                                 </td>
                                 <td>{{ senha_portal }}</td>
                                 <td>{{ aluno.classe_nome or '—' }}</td>
@@ -146,14 +146,14 @@
                 <section class="card">
                     <h2>Pesquisar aluno</h2>
                     <p class="card-subtitle">
-                        Pesquisa só por código (ESG-…) ou ID interno — não por nome.
+                        Pesquisa só por código ESG (ESG-…).
                     </p>
                     <form method="GET" action="{{ url_for('visao_geral.central_verificacao') }}">
                         <div class="form-group">
-                            <label>Código ou ID</label>
+                            <label>Código ESG</label>
                             <input type="text" name="pesquisa_id"
                                 value="{{ request.args.get('pesquisa_id', '') }}"
-                                placeholder="Ex.: ESG-A3F9K2 ou 42" required>
+                                placeholder="Ex.: ESG-A3F9K2" required>
                         </div>
                         <button type="submit" class="btn-primary">Procurar</button>
                     </form>
@@ -163,38 +163,37 @@
                     <h2>Resultado da pesquisa</h2>
                     {% if aluno_pesquisado %}
                     <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 16px; border: 1px solid #e2e8f0; line-height: 1.8;">
-                        <p style="margin: 4px 0;"><strong>Nome:</strong>
-                            <span style="text-transform: uppercase;">{{ aluno_pesquisado.nome }}</span>
-                        </p>
+                        <p style="margin: 4px 0;"><strong>Nome:</strong> {{ aluno_pesquisado.nome }}</p>
                         <p style="margin: 4px 0;">
                             <strong>Código (login):</strong>
                             <span style="color: #2563eb; font-weight: bold;">
-                                {{ aluno_pesquisado.codigo_estudante or ('#' ~ aluno_pesquisado.id) }}
+                                {{ aluno_pesquisado.codigo_estudante or '—' }}
                             </span>
                         </p>
                         <p style="margin: 4px 0;">
                             <strong>Senha:</strong>
                             <span style="font-weight: bold;">{{ senha_portal }}</span>
                         </p>
-                        <p style="margin: 4px 0;"><strong>ID interno:</strong> {{ aluno_pesquisado.id }}</p>
                         <p style="margin: 4px 0;"><strong>Classe:</strong> {{ aluno_pesquisado.classe_nome or '—' }}</p>
                         <p style="margin: 4px 0;"><strong>Grupo:</strong> {{ aluno_pesquisado.grupo_nome or '—' }}</p>
                         <p style="margin: 4px 0;"><strong>Turma:</strong> {{ aluno_pesquisado.turma_nome or '—' }}</p>
+                        <p style="margin: 4px 0;"><strong>Estado:</strong> {{ aluno_pesquisado.situacao or '—' }}</p>
+                        <p style="margin: 4px 0;"><strong>Aviso:</strong> {{ aluno_pesquisado.aviso or '—' }}</p>
                     </div>
                     <div class="action-buttons-row">
                         <a href="{{ url_for('portal.portal', student_id=aluno_pesquisado.id) }}" target="_blank"
                             class="btn-primary" style="text-decoration: none; text-align: center;">
                             Abrir Portal
                         </a>
-                        <a href="{{ url_for('gestao.gestao_alunos', pesquisa=aluno_pesquisado.id) }}"
+                        <a href="{{ url_for('gestao.editar_aluno', aluno_id=aluno_pesquisado.id) }}"
                             class="btn-secondary" style="text-decoration: none; text-align: center;">
                             Editar Aluno
                         </a>
                     </div>
                     <div class="action-buttons-row" style="margin-top: 10px;">
                         <button type="button" class="btn-secondary btn-small" id="btn-copiar-nome-id" style="width: auto;"
-                            data-texto="{{ aluno_pesquisado.nome }} - {{ aluno_pesquisado.codigo_estudante or ('#' ~ aluno_pesquisado.id) }}">
-                            Copiar nome e ID juntos
+                            data-texto="{{ aluno_pesquisado.nome }} - {{ aluno_pesquisado.codigo_estudante or '—' }}">
+                            Copiar nome e código
                         </button>
                     </div>
                     {% else %}

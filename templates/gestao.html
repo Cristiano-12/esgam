@@ -16,7 +16,7 @@
             <section class="card">
                 <h2>Gestão de alunos</h2>
                 <p class="card-subtitle">
-                    Aqui só se altera o <strong>nome</strong> do aluno. Use o código ESG de acesso.
+                    Pode alterar <strong>nome</strong>, <strong>estado</strong> (situação) e <strong>aviso</strong>.
                 </p>
             </section>
 
@@ -37,8 +37,7 @@
                     <div class="form-group">
                         <label for="pesquisa-aluno">Código ESG</label>
                         <input type="text" id="pesquisa-aluno" name="pesquisa"
-                               value="{{ pesquisa or '' }}"
-                               placeholder="Ex.: ESG-A3F9K2">
+                               value="{{ pesquisa or '' }}" placeholder="Ex.: ESG-A3F9K2">
                     </div>
                     <button type="submit" class="btn-primary">Procurar</button>
                 </form>
@@ -46,10 +45,9 @@
 
             {% if aluno_edicao %}
             <section class="card" id="bloco-edicao">
-                <h3>Editar nome</h3>
+                <h3>Editar aluno</h3>
                 <p class="card-subtitle">
-                    Código:
-                    <strong style="color:#2563eb;">{{ aluno_edicao.codigo_estudante or '—' }}</strong>
+                    Código: <strong style="color:#2563eb;">{{ aluno_edicao.codigo_estudante or '—' }}</strong>
                     · Classe: {{ aluno_edicao.classe_nome or '—' }}
                     · Grupo: {{ aluno_edicao.grupo_nome or '—' }}
                     · Turma: {{ aluno_edicao.turma_nome or '—' }}
@@ -58,23 +56,32 @@
                 <form action="{{ url_for('gestao.guardar_alteracoes', aluno_id=aluno_edicao.id) }}" method="POST">
                     <div class="form-group">
                         <label>Nome completo</label>
-                        <input type="text" name="nome" value="{{ aluno_edicao.nome }}" required
-                               style="text-transform: none;">
+                        <input type="text" name="nome" value="{{ aluno_edicao.nome }}" required style="text-transform:none;">
                     </div>
 
-                    <div style="display: flex; gap: 10px; margin-top: 15px;">
-                        <button type="submit" class="btn-primary" style="flex: 1;">Guardar nome</button>
+                    <div class="form-group">
+                        <label>Estado (aparece abaixo da média no portal)</label>
+                        <select name="situacao">
+                            <option value="">— Automático (pela média) —</option>
+                            {% for s in situacoes %}
+                            <option value="{{ s }}" {% if aluno_edicao.situacao == s %}selected{% endif %}>{{ s }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Aviso no portal (máx. {{ aviso_max }} caracteres)</label>
+                        <input type="text" name="aviso" id="campo-aviso" maxlength="{{ aviso_max }}"
+                               value="{{ aluno_edicao.aviso or '' }}"
+                               placeholder="Ex.: Comparecer na secretaria">
+                        <small id="aviso-contador" style="color:#64748b;">0 / {{ aviso_max }}</small>
+                    </div>
+
+                    <div style="display:flex; gap:10px; margin-top:15px;">
+                        <button type="submit" class="btn-primary" style="flex:1;">Guardar</button>
                         <a href="{{ url_for('visao_geral.central_verificacao') }}" class="btn-secondary"
-                           style="text-decoration: none; text-align: center; padding: 10px 18px;">
-                            Visão Geral
-                        </a>
+                           style="text-decoration:none; text-align:center; padding:10px 18px;">Visão Geral</a>
                     </div>
-                </form>
-
-                <form action="{{ url_for('gestao.eliminar_aluno', aluno_id=aluno_edicao.id) }}" method="POST"
-                      style="margin-top: 16px;"
-                      onsubmit="return confirm('Enviar este aluno para a lixeira?');">
-                    <button type="submit" class="btn-danger">Eliminar (lixeira)</button>
                 </form>
             </section>
 
@@ -85,30 +92,17 @@
                 <div class="table-container">
                     <table class="table-lixeira">
                         <thead>
-                            <tr>
-                                <th>Código</th>
-                                <th>Nome</th>
-                                <th>Classe</th>
-                                <th>Grupo</th>
-                                <th>Turma</th>
-                                <th class="td-center">Ações</th>
-                            </tr>
+                            <tr><th>Código</th><th>Nome</th><th>Estado</th><th class="td-center">Ações</th></tr>
                         </thead>
                         <tbody>
                             {% for aluno in alunos %}
                             <tr>
-                                <td class="text-bold" style="color:#2563eb;">
-                                    {{ aluno.codigo_estudante or '—' }}
-                                </td>
+                                <td class="text-bold" style="color:#2563eb;">{{ aluno.codigo_estudante or '—' }}</td>
                                 <td>{{ aluno.nome }}</td>
-                                <td>{{ aluno.classe_nome or '—' }}</td>
-                                <td>{{ aluno.grupo_nome or '—' }}</td>
-                                <td>{{ aluno.turma_nome or '—' }}</td>
+                                <td>{{ aluno.situacao or '—' }}</td>
                                 <td class="td-center">
                                     <a href="{{ url_for('gestao.editar_aluno', aluno_id=aluno.id) }}"
-                                       class="btn-secondary btn-small" style="text-decoration:none;">
-                                        Editar nome
-                                    </a>
+                                       class="btn-secondary btn-small" style="text-decoration:none;">Editar</a>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -116,28 +110,25 @@
                     </table>
                 </div>
                 {% else %}
-                <p class="card-subtitle">Nenhum aluno encontrado para «{{ pesquisa }}».</p>
+                <p class="card-subtitle">Nenhum aluno encontrado.</p>
                 {% endif %}
             </section>
             {% else %}
             <section class="card">
-                <p class="card-subtitle" style="text-align:center; padding: 24px;">
-                    Pesquise pelo código ESG, ou abra um aluno a partir da Visão Geral.
+                <p class="card-subtitle" style="text-align:center; padding:24px;">
+                    Pesquise pelo código ESG ou abra um aluno a partir da Visão Geral.
                 </p>
             </section>
             {% endif %}
 
-            <div style="margin-top: 24px; text-align: center;">
+            <div style="margin-top:24px; text-align:center;">
                 <a href="{{ url_for('controle.central_verificacao') }}" class="btn-secondary"
-                   style="text-decoration: none; display: inline-block; padding: 10px 20px;">
-                    Voltar ao Controlo
-                </a>
+                   style="text-decoration:none; display:inline-block; padding:10px 20px;">Voltar ao Controlo</a>
             </div>
-
         </div>
     </main>
 
-    <script src="{{ url_for('static', filename='login.js') }}"></script>
+    <script src="{{ url_for('static', filename='index.js') }}"></script>
 
 </body>
 </html>

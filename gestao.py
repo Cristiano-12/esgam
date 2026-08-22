@@ -5,6 +5,16 @@ from models import db, Aluno
 
 gestao_bp = Blueprint("gestao", __name__)
 
+SITUACOES = [
+    "Aprovado",
+    "Reprovado",
+    "Reprovado por disciplina",
+    "Reprovado por comportamento",
+    "Transferido",
+    "Anulado",
+]
+AVISO_MAX = 80
+
 
 def login_required(f):
     @wraps(f)
@@ -13,12 +23,10 @@ def login_required(f):
             flash("Por favor, efetue login.", "erro")
             return redirect(url_for("login.login"))
         return f(*args, **kwargs)
-
     return decorated
 
 
 def _formatar_nome(nome):
-    """Primeira letra de cada palavra em maiúscula (não tudo MAIÚSCULAS)."""
     nome = " ".join(str(nome or "").split())
     if not nome:
         return ""
@@ -33,22 +41,18 @@ def gestao_alunos():
     aluno_edicao = None
 
     if pesquisa:
-        # Preferir código ESG; ID numérico interno só como fallback silencioso
         aluno_edicao = Aluno.query.filter_by(
             codigo_estudante=pesquisa, deleted_at=None
         ).first()
-
         if not aluno_edicao:
             aluno_edicao = Aluno.query.filter(
                 Aluno.deleted_at.is_(None),
                 Aluno.codigo_estudante.ilike(pesquisa),
             ).first()
-
         if not aluno_edicao and pesquisa.isdigit():
             aluno_edicao = Aluno.query.filter_by(
                 id=int(pesquisa), deleted_at=None
             ).first()
-
         if not aluno_edicao:
             alunos = (
                 Aluno.query.filter(
@@ -70,6 +74,8 @@ def gestao_alunos():
         alunos=alunos,
         aluno_edicao=aluno_edicao,
         pesquisa=pesquisa,
+        situacoes=SITUACOES,
+        aviso_max=AVISO_MAX,
     )
 
 
@@ -82,13 +88,14 @@ def editar_aluno(aluno_id):
         alunos=[aluno_edicao],
         aluno_edicao=aluno_edicao,
         pesquisa=aluno_edicao.codigo_estudante or "",
+        situacoes=SITUACOES,
+        aviso_max=AVISO_MAX,
     )
 
 
 @gestao_bp.route("/admin/guardar-alteracoes/<int:aluno_id>", methods=["POST"])
 @login_required
 def guardar_alteracoes(aluno_id):
-    """Altera apenas o nome (capitalização correcta)."""
     aluno = Aluno.query.filter_by(id=aluno_id, deleted_at=None).first_or_404()
 
     nome = _formatar_nome(request.form.get("nome", ""))
@@ -96,14 +103,25 @@ def guardar_alteracoes(aluno_id):
         flash("O nome do aluno não pode estar vazio.", "danger")
         return redirect(url_for("gestao.editar_aluno", aluno_id=aluno.id))
 
+    situacao = (request.form.get("situacao") or "").strip()
+    if situacao and situacao not in SITUACOES:
+        flash("Situação inválida.", "danger")
+        return redirect(url_for("gestao.editar_aluno", aluno_id=aluno.id))
+
+    aviso = (request.form.get("aviso") or "").strip()
+    if len(aviso) > AVISO_MAX:
+        aviso = aviso[:AVISO_MAX]
+
     aluno.nome = nome
+    aluno.situacao = situacao or None
+    aluno.aviso = aviso or None
 
     try:
         db.session.commit()
-        flash("Nome atualizado com sucesso!", "success")
+        flash("Dados atualizados com sucesso!", "success")
     except Exception:
         db.session.rollback()
-        flash("Erro ao guardar o nome.", "danger")
+        flash("Erro ao guardar as alterações.", "danger")
         return redirect(url_for("gestao.editar_aluno", aluno_id=aluno.id))
 
     return redirect(url_for("gestao.editar_aluno", aluno_id=aluno.id))

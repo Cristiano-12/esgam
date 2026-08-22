@@ -150,6 +150,9 @@ class Aluno(db.Model):
 
     data_cadastro = db.Column(db.DateTime, default=datetime.now)
 
+    situacao = db.Column(db.String(80), nullable=True)
+    aviso = db.Column(db.String(120), nullable=True)
+
     # Soft Delete / Lixeira
     deleted_at = db.Column(db.DateTime, nullable=True)
     motivo_eliminacao = db.Column(db.String(255), nullable=True)
